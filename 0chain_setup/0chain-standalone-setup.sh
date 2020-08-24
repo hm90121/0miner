@@ -203,12 +203,14 @@ if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
   popd
 fi
 
-kubectl create configmap magic-block-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=on-prem/wallet/magicBlock.json -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/magic_block.yaml
-kubectl create configmap wallet-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=wallet.txt=on-prem/wallet/wallet_blobber.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/wallet.yaml
-kubectl create configmap owner-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=b0owner_keys.txt=on-prem/wallet/owner_keys.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/owner.yaml
+configure_standalone_dp
+# kubectl create configmap magic-block-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=on-prem/wallet/magicBlock.json -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/magic_block.yaml
+# kubectl create configmap wallet-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=wallet.txt=on-prem/wallet/wallet_blobber.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/wallet.yaml
+# kubectl create configmap owner-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=b0owner_keys.txt=on-prem/wallet/owner_keys.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/owner.yaml
 
 config_dir="Configmap_enterprise"
 pushd Keygen
+mkdir -p k8s-yamls && rm -f k8s-yamls/*
 blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
 popd
 blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml

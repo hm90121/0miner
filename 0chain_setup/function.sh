@@ -180,16 +180,18 @@ create_bucket() {
   popd
   # echo "$bucket_region $bucket_name $bucket_url $access_key_id $secret_access_key"
   if [[ -z $bucket_region || -z $bucket_name || -z $bucket_url || -z $access_key_id || -z $secret_access_key ]]; then
-    bucket_url="${minio_server}.devnet-0chain.net:9000"
-    bucket_name="${cluster}"
-    access_key_id="0chain"
-    secret_access_key="Qnqkaet0fmJxBMWFDuUN"
+    bucket_url="play.min.io"
+    bucket_name="mytestbucket"
+    access_key_id="Q3AM3UQ867SPQQA43P2F"
+    secret_access_key="zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
     bucket_region="us-east-1"
   fi
   if [[ $enable_archive != true ]]; then
+    mkdir -p k8s-yamls && rm -f k8s-yamls/*
     bucket_url=${bucket_url} bucket_name=${bucket_name} access_key_id=${access_key_id} secret_access_key=${secret_access_key} bucket_region=${bucket_region} \
       envsubst <Sharders_tmplt/Configmap/configmap-minio.template >k8s-yamls/secret-minio-${cluster}.yaml
     create_configmap k8s-yamls/secret-minio-${cluster}.yaml minio
+    sleep 5 && rm k8s-yamls/secret-minio-${cluster}.yaml
   fi
 }
 
@@ -222,16 +224,11 @@ cluster_reset() {
   cluster=$1
   kubeconfig=$2
 
-  pushd Load_balancer
-
-  # kubectl delete -f k8s-yamls/ingress-nginx.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  # kubectl delete -f ./nginx/ingress-nginx.yaml --kubeconfig ${kubeconfig}
-
-  # if [[ $standalone != true ]]; then
-  #   pushd Load_balancer
-  #   kubectl delete -f ./Ambassador/ambassador-aes.yaml --kubeconfig ${kubeconfig}
-  #   kubectl delete -f ./Ambassador/ambassador-aes-crds.yaml --kubeconfig ${kubeconfig}
-  # fi
+  if [[ $standalone != true ]]; then
+    pushd Load_balancer
+    kubectl delete -f ./Ambassador/ambassador-aes.yaml --kubeconfig ${kubeconfig}
+    kubectl delete -f ./Ambassador/ambassador-aes-crds.yaml --kubeconfig ${kubeconfig}
+  fi
 
   local ns_nginx=$(kubectl get ns --kubeconfig ${kubeconfig} | grep "ingress-nginx")
   if [[ ! -z $ns_nginx ]]; then
@@ -337,7 +334,7 @@ k8s_deply() {
       if [[ $file == *.yaml ]]; then
         echo -e "\e[32m Creating kubernetes Deployments yamls from template.. \e[39m"
         host_address=${host_address} n=${n} REGISTRY_IMAGE=${REGISTRY_IMAGE} TAG=${TAG} envsubst <$deploy_dir/${file} >k8s-yamls/deployment-${n}-${file}
-        python3 ../update_label.py k8s-yamls/deployment-${n}-${file} $num_nodes 4
+        python3 ../update_label.py k8s-yamls/deployment-${n}-${file} $num_nodes $n
         n=${n} kubectl create -f k8s-yamls/deployment-${n}-${file} --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
         echo -e "\e[32m Creating kubernetes Deployments ${file} for $service_dir from ${deploy_dir}.. \e[39m ${NEWLINE}"
         sleep $duration
@@ -368,29 +365,23 @@ unit_deploy() {
 
 patch_ngnix_lb() {
   echo -e "\e[93m =================== Patching NGINX for TCP & URL Mappings =================== \e[39m"
+  mkdir -p k8s-yamls && rm -f k8s-yamls/*
 
-  if [[ ! -f k8s-yamls/nginx_cm_tcp.yaml || ! -f k8s-yamls/nginx_svc_patch.yaml ]]; then
-    cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
-    envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
-  fi
+  cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
+  envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
   for n in $(seq $SP $(($2 + $EP))); do
     n=$(validate_port $n)
-    local svc_name=$3-$n
-    local svc_port=$1$n
-    echo -e "$exposed_port_list Exposing service svc_name on $host_address:$svc_port"
-
-    cat <<EOF >>./k8s-yamls/nginx_cm_tcp.yaml
-  $svc_port: "${cluster}/$svc_name:$svc_port"
-EOF
-
+    exposed_port_list="$exposed_port_list Exposing service $3-$n on $host_address:$1$n${NEWLINE}"
     cat <<EOF >>./k8s-yamls/nginx_svc_patch.yaml
-  - name: "$svc_port"
-    nodePort: $svc_port
-    port: $svc_port
+  - name: "$1$n"
+    nodePort: $1$n
+    port: $1$n
     protocol: TCP
 EOF
   done
 
+  kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+  kubectl -n ingress-nginx patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
 }
 
 patch_ambassador() {
@@ -406,12 +397,7 @@ patch_ambassador() {
   pushd Ambassador
   mkdir -p k8s-yamls && rm -f k8s-yamls/*
 
-  echo -e "\e[93m ===================Patching ambassador for TCP & URL Mappings============= \e[39m"
-  if [ $cloud_provider == "on-premise" ]; then
-    echo -e "\e[32m Patching ambassador for external IP \e[39m"
-    externalIP=${remote_ip} envsubst <ambassador_svc_eip_patch.template >k8s-yamls/ambassador_svc_eip_patch.yaml
-    kubectl -n ingress-nginx patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/ambassador_svc_eip_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  fi
+  echo -e "\e[93m =================== Patching ambassador for TCP & URL Mappings =================== \e[39m"
 
   ambassador_svc_http_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "http" }}{{print .nodePort}}{{end}}{{end}}')
   ambassador_svc_https_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "https" }}{{print .nodePort}}{{end}}{{end}}')
@@ -571,7 +557,7 @@ get_host() {
   if [ $address_type == "external" ]; then
     host_address="${host_name}.${domain_name}"
   elif [ $address_type == "internal" ]; then
-    host_address="ingress-nginx-controller.ingress-nginx"
+    host_address="ambassador.ambassador"
   elif [[ $address_type == "custom" ]]; then
     if [[ $b -gt $blobber_limit ]]; then
       host_address="blobbers.$host_address"
@@ -594,8 +580,8 @@ create_dns_mapping() {
     if [ $lb_type == "ambassador" ]; then
       host_ip=$(kubectl get --kubeconfig ${kubeconfig} -n ambassador service ambassador -o 'go-template={{range .status.loadBalancer.ingress}}{{print .'${ip_type}' "\n"}}{{end}}')
     elif [ $lb_type == "ingress-nginx" ]; then
-      host_ip=$(kubectl get --kubeconfig ${kubeconfig} -n ${cluster} service ingress-nginx-controller -o 'go-template={{range .status.loadBalancer.ingress}}{{print .'${ip_type}' "\n"}}{{end}}')
-      # local host_address="blobbers.${host_name}.${domain_name}"
+      host_ip=$(kubectl get --kubeconfig ${kubeconfig} -n ingress-nginx service ingress-nginx-controller -o 'go-template={{range .status.loadBalancer.ingress}}{{print .'${ip_type}' "\n"}}{{end}}')
+      local host_address="blobbers.${host_name}.${domain_name}"
     fi
 
     if [[ -z "$host_ip" ]]; then
@@ -609,11 +595,14 @@ create_dns_mapping() {
     ((ip_attempt++))
   done
 
-  echo -e "\e[93m =================== Creating Dns mapping using aws route 53 =================== \e[39m" && append_logs "Updating DNS mapping for requested URL"
-  record_type=$record_type
-  host_url=${host_address} host_ip=${host_ip} record_type=${record_type} envsubst <aws_dns_mapping.template >k8s-yamls/"${cloud_provider}_${lb_type}_DNS_mapping.json"
-  aws route53 change-resource-record-sets --hosted-zone-id $host_zone_id --change-batch file://k8s-yamls/"${cloud_provider}_${lb_type}_DNS_mapping.json"
-  
+  # creating Dns mapping using aws route 53
+  # host_address="${host_address:-$(kubectl get -n ambassador service ambassador -o 'go-template={{range .status.loadBalancer.ingress}}{{print .hostname "\n"}}{{end}}')}"
+  if [[ $cloud_provider == "aws" || $cloud_provider == "oci" ]]; then
+    echo -e "\e[93m =================== Creating Dns mapping using aws route 53 =================== \e[39m" && append_logs "Updating DNS mapping for requested URL"
+    record_type=$record_type
+    host_url=${host_address} host_ip=${host_ip} record_type=${record_type} envsubst <aws_dns_mapping.template >k8s-yamls/"${cloud_provider}_${lb_type}_DNS_mapping.json"
+    aws route53 change-resource-record-sets --hosted-zone-id $host_zone_id --change-batch file://k8s-yamls/"${cloud_provider}_${lb_type}_DNS_mapping.json"
+  fi
   popd
 }
 
@@ -655,8 +644,7 @@ configure_standalone_dp() {
     kubectl create configmap owner-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=b0owner_keys.txt=on-prem/wallet/owner_keys.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/owner.yaml
   fi
 
-echo "${block_worker_url}" >on-prem/wallet/variable.txt
-curl "http://one.devnet-0chain.net/dns/magic_block" >on-prem/wallet/magicBlock-test.json
+  mkdir -p on-prem/wallet && rm -f on-prem/wallet/*
   curl "${block_worker_url}/magic_block" >on-prem/wallet/magicBlock.json
   kubectl create configmap magic-block-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=on-prem/wallet/magicBlock.json -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/magic_block.yaml
 
