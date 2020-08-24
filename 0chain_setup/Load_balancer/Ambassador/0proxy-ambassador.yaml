@@ -1,0 +1,8 @@
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name:  0proxy
+spec:
+  ambassador_id: ambassador-two
+  port: 9082
+  service: zproxy:31082

@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: redis-txns-${n}
+    tier: prod
+  name: redis-txns-${n}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-txns-${n}
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: redis-txns-${n}
+        tier: prod
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis-${n}
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: redis:alpine
+          name: redis-txns-${n}
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+          args:
+            - redis-server
+            - /0chain/config/redis/transactions.redis.conf
+          volumeMounts:
+            - mountPath: /0chain/config/redis
+              name: miner-redis-config
+            - mountPath: /0chain/data
+              name: miner-data-pvc-${n}
+      restartPolicy: Always
+      volumes:
+        - name: miner-redis-config
+          configMap:
+            name: miner-redis-config
+            defaultMode: 0755
+        - name: miner-data-pvc-${n}
+          persistentVolumeClaim:
+            claimName: miner-data-pvc-${n}

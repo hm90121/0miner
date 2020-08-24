@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: cassandra-init-${n}
+    tier: prod
+  name: cassandra-init-${n}
+spec:
+  template:
+    spec:
+      containers:
+        - image: cassandra:latest
+          name: cassandra-init-${n}
+          env:
+            - name: CASSANDRA_HOST
+              value: cassandra-${n}
+          resources:
+            limits:
+              cpu: 400m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 100Mi
+          args:
+            - bash
+            - /0chain/bin/cassandra-init.sh
+          volumeMounts:
+            - mountPath: /0chain/bin
+              name: sharder-bin-volume
+            - mountPath: /0chain/sql/txn_summary.sql
+              name: sharder-sql-volume
+              subPath: txn_summary.sql
+            - mountPath: /0chain/sql/zerochain_keyspace.sql
+              name: sharder-sql-volume
+              subPath: zerochain_keyspace.sql
+            - mountPath: /0chain/sql/magic_block_map.sql
+              name: sharder-sql-volume
+              subPath: magic_block_map.sql
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Never
+      volumes:
+        - name: sharder-sql-volume
+          configMap:
+            name: sharder-sql
+            items:
+              - key: truncate_tables.sql
+                path: truncate_tables.sql
+              - key: txn_summary.sql
+                path: txn_summary.sql
+              - key: zerochain_keyspace.sql
+                path: zerochain_keyspace.sql
+              - key: magic_block_map.sql
+                path: magic_block_map.sql
+        - name: sharder-bin-volume
+          configMap:
+            name: sharder-bin
+            items:
+              - key: cassandra-init.sh
+                path: cassandra-init.sh
+              - key: scylla-init.sh
+                path: scylla-init.sh
+              - key: wait-for-service.sh
+                path: wait-for-service.sh
+            defaultMode: 0755

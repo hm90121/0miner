@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: recorder
+    tier: prod
+  name: recorder
+spec:
+  ports:
+  - name: "recorder"
+    port: 80
+    targetPort: 3000
+  type: NodePort
+  selector:
+    app : recorder
+    tier: prod

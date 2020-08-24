@@ -1,0 +1,45 @@
+apiVersion: v1
+data:
+  00-create-user.sql: |-
+    CREATE extension ltree;
+    CREATE DATABASE zbox;
+    \connect zbox;
+    CREATE USER zbox_user WITH ENCRYPTED PASSWORD 'zbox_server';
+    GRANT ALL PRIVILEGES ON DATABASE zbox TO zbox_user;
+  01-create-table.sql: "\\connect zbox;\n\nCREATE OR REPLACE FUNCTION update_modified_column()
+    \nRETURNS TRIGGER AS $$\nBEGIN\n    NEW.updated_at = now();\n    RETURN NEW; \nEND;\n$$
+    language 'plpgsql';\n\n\nCREATE TABLE allocations(\n    id VARCHAR (64) PRIMARY
+    KEY,\n    size BIGINT NOT NULL DEFAULT 0,\n    data_shards INT NOT NULL,\n    parity_shards
+    INT NOT NULL,\n    owner_id VARCHAR(64) NOT NULL,\n    owner_public_key VARCHAR(256)
+    NOT NULL,\n    expiration_date BIGINT NOT NULL,\n    allocation_type VARCHAR(10)
+    NOT NULL,\n    created_at TIMESTAMP NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMP
+    NOT NULL DEFAULT NOW()\n);\n\nCREATE TRIGGER allocation_modtime BEFORE UPDATE
+    ON allocations FOR EACH ROW EXECUTE PROCEDURE  update_modified_column();\n\nCREATE
+    TABLE free_allocations(\n    phone_number VARCHAR(30) PRIMARY KEY,\n    allocation_id
+    VARCHAR (64) UNIQUE,\n    owner_id VARCHAR(64) UNIQUE,\n    created_at TIMESTAMP
+    NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMP NOT NULL DEFAULT NOW()\n);\n\nCREATE
+    TRIGGER free_allocation_modtime BEFORE UPDATE ON free_allocations FOR EACH ROW
+    EXECUTE PROCEDURE  update_modified_column();\n\nCREATE TABLE storage_subscriptions(\n
+    \   id VARCHAR(30) PRIMARY KEY,\n    allocation_id VARCHAR (64) UNIQUE,\n    owner_id
+    VARCHAR(64) NOT NULL,\n    product_id VARCHAR(30) NOT NULL,\n    created_at TIMESTAMP
+    NOT NULL DEFAULT NOW(),\n    updated_at TIMESTAMP NOT NULL DEFAULT NOW()\n);\n\nCREATE
+    TRIGGER storage_subscriptions_modtime BEFORE UPDATE ON storage_subscriptions FOR
+    EACH ROW EXECUTE PROCEDURE  update_modified_column();\n\nCREATE TABLE storage_products(\n
+    \   product_id VARCHAR(30) PRIMARY KEY,\n    size BIGINT NOT NULL DEFAULT 0,\n
+    \   payment_product_id VARCHAR(30),\n    payment_plan_id VARCHAR(30),\n    unit_price
+    BIGINT NOT NULL DEFAULT 0,\n    frequency VARCHAR(30)\n);\n\nCREATE TRIGGER storage_products_modtime
+    BEFORE UPDATE ON storage_products FOR EACH ROW EXECUTE PROCEDURE  update_modified_column();\n\nINSERT
+    INTO storage_products(product_id, size, payment_product_id, payment_plan_id, unit_price,
+    frequency) VALUES ('premium_monthly', 1099511627776, 'prod_FYAfXNuI50bHso', 'premium_monthly',
+    999, 'monthly');\nINSERT INTO storage_products(product_id, size, payment_product_id,
+    payment_plan_id, unit_price, frequency) VALUES ('premium_yearly', 1099511627776,
+    '', 'premium_yearly', 10000, 'yearly');"
+  02-grant-priv.sql: |-
+    \connect zbox;
+
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO zbox_user;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO zbox_user;
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: 0box-sql

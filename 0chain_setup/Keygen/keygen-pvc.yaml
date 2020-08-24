@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: sm-config-pvc
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ${rwm_sc}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nodes-yaml-pvc
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ${rwm_sc}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: blob-config-pvc
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ${rwm_sc}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: zbox-config-pvc
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ${rwm_sc}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: worker-config-pvc
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Mi
+  storageClassName: ${rwm_sc}

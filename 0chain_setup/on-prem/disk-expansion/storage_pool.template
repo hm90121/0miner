@@ -1,0 +1,10 @@
+Spec:
+  Block Devices:
+    Block Device List:
+      - ${disk_name}-ndm
+# node-4-hdd-ndm
+# node-4-ssd-ndm
+# node-5-hdd-ndm
+# node-5-ssd-ndm
+# node-6-hdd-ndm
+# node-6-ssd-ndm

@@ -1,0 +1,13 @@
+apiVersion: v1
+stringData:
+  minio_config.txt: |-
+    s3.amazonaws.com
+    AKIA4MPQDEZ4BU2MAAFU
+    1dGaeQKO5678OD62zI3j01oq2rNPF8v1i7S/0Nuj
+    three-18796
+    three-18796-archive
+    us-east-2
+kind: Secret
+metadata:
+  creationTimestamp: null
+  name: minio-config

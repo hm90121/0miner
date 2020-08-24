@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: gen-keys
+  name: gen-keys
+spec:
+  template:
+    spec:
+      containers:
+        - name: gen-keys
+          image: 0chainkube/zchain_genkeys:v1.0.15
+          imagePullPolicy: Always
+          env:
+            - name: MINER
+              value: "$m"
+            - name: SHARDER
+              value: "$s"
+            - name: BLOBBER
+              value: "$b"
+            - name: PUBLIC_ENDPOINT
+              value: "${host_address}"
+            - name: MPORT
+              value: "312"
+            - name: ZPORT
+              value: "31081"
+            - name: SPORT
+              value: "311"
+            - name: ZBOX
+              value: "1"
+            - name: WORKER
+              value: "1"
+            - name: DTYPE
+              value: "${dtype}"
+          volumeMounts:
+            - mountPath: /ms-keys
+              name: sm-config-pvc
+            - mountPath: /config
+              name: 0chain-config-pvc
+            - mountPath: /blob-keys
+              name: blob-config-pvc
+            - mountPath: /zbox-keys
+              name: zbox-config-pvc
+            - mountPath: /worker-keys
+              name: worker-config-pvc
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: sm-config-pvc
+          persistentVolumeClaim:
+            claimName: sm-config-pvc
+        - name: 0chain-config-pvc
+          persistentVolumeClaim:
+            claimName: nodes-yaml-pvc
+        - name: blob-config-pvc
+          persistentVolumeClaim:
+            claimName: blob-config-pvc
+        - name: zbox-config-pvc
+          persistentVolumeClaim:
+            claimName: zbox-config-pvc
+        - name: worker-config-pvc
+          persistentVolumeClaim:
+            claimName: worker-config-pvc

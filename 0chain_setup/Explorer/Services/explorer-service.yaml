@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: explorer
+    tier: prod
+  name: explorer
+spec:
+  ports:
+  - name: "explorer"
+    port: 80
+    nodePort: 31080
+  type: NodePort
+  selector:
+    app : explorer
+    tier: prod

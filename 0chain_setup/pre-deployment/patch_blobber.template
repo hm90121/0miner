@@ -1,0 +1,29 @@
+{
+  "spec": {
+    "containers": [
+      {
+        "args": [
+          "./bin/blobber",
+          "--port",
+          "31301",
+          "--hostname",
+          "predeploy.mjc.testnet-0chain.net",
+          "--deployment_mode",
+          "0",
+          "--nodes_file",
+          "nodes",
+          "--keys_file",
+          "keysconfig/b0bnode01_keys.txt",
+          "--files_dir",
+          "/blobber/files",
+          "--log_dir",
+          "/blobber/log",
+          "--db_dir",
+          "/blobber/data",
+          "--minio_file",
+          "keysconfig/minio_config.txt"
+        ]
+      }
+    ]
+  }
+}

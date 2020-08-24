@@ -1,0 +1,13 @@
+apiVersion: getambassador.io/v2
+kind: Host
+metadata:
+  name: url-host
+spec:
+  ambassador_id: ambassador-two
+  hostname: ${host_address}
+  acmeProvider:
+    authority: none
+  requestPolicy:
+    insecure:
+      action: Route
+      additionalPort: -1 

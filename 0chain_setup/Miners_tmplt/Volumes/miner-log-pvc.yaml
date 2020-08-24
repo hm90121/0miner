@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: miner-log-pvc-${n}
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: ${log_volume_size}Gi
+  storageClassName: ${fs_type}
+

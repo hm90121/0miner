@@ -1,0 +1,23 @@
+apiVersion: openebs.io/v1alpha1
+kind: BlockDeviceClaim
+metadata:
+  finalizers:
+  - storagepoolclaim.openebs.io/finalizer
+  labels:
+    openebs.io/storage-pool-claim: cstor-disk-pool
+  name: bdc-${bd_uid}
+  namespace: openebs
+  ownerReferences:
+  - apiVersion: openebs.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: StoragePoolClaim
+    name: cstor-disk-pool
+    uid: ${spc_uid}
+spec:
+  blockDeviceName: ${disk_name}
+  blockDeviceNodeAttributes:
+    hostName: ${node_name}
+  resources:
+    requests:
+      storage: ${disk_size}

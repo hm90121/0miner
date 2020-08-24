@@ -1,0 +1,37 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: postgres-zbox-post
+  name: postgres-zbox-post
+spec:
+  template:
+    spec:
+      containers:
+      - name: postgres-zbox-post
+        image: postgres:11
+        args:
+        - bash
+        - /0box/bin/postgres-entrypoint.sh
+        env:
+        - name: POSTGRES_HOST
+          value: postgres-zbox
+        - name: POSTGRES_PORT
+          value: "5432"
+        - name: POSTGRES_USER
+          value: postgres
+        volumeMounts:
+        - mountPath: /0box/bin
+          name: postgres-bin-pvc
+        - mountPath: /0box/sql
+          name: postgres-sql-pvc
+      restartPolicy: Never
+      volumes:
+      - name: postgres-sql-pvc
+        configMap:
+          name: 0box-sql
+          defaultMode: 0755
+      - name: postgres-bin-pvc
+        configMap:
+          name: 0box-bin
+          defaultMode: 0755

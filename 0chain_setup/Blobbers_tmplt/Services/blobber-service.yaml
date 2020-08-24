@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: blobber-${n}
+    tier: prod
+  name: blobber-${n}
+spec:
+  ports:
+  - name: "313${n}"
+    port: 313${n}
+    targetPort: 313${n}
+  type: NodePort
+  selector:
+    app: blobber-${n}
+

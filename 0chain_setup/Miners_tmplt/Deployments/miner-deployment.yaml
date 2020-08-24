@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: miner-${n}
+    tier: prod
+  name: miner-${n}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: miner-${n}
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: miner-${n}
+        tier: prod
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis-${n}
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: ${REGISTRY_IMAGE}/miner:${TAG}
+          imagePullPolicy: Always
+          name: miner-${n}
+          ports:
+            - containerPort: 311${n}
+          command:
+            - /bin/sh
+            - -c
+            - mkdir -p /0chain/data/rocksdb && mkdir -p /0chain/data/redis/state && mkdir -p /0chain/data/redis/transactions &&  chmod -R 777 /0chain/data/redis && ./bin/miner --deployment_mode 0 --keys_file config/b0mnode${n}_keys.txt --delay_file config/n2n_delay.yaml
+          env:
+            - name: DOCKER
+              value: "true"
+            - name: REDIS_HOST
+              value: redis-${n}
+            - name: REDIS_TXNS
+              value: redis-txns-${n}
+          resources:
+            limits:
+              cpu: 200m
+              memory: 250Mi
+            requests:
+              cpu: 30m
+              memory: 50Mi
+          volumeMounts:
+            - mountPath: /0chain/config
+              name: sm-config-pvc
+            - mountPath: /0chain/config/nodes.yaml
+              name: nodes-yaml-pvc
+              subPath: nodes.yaml
+            - mountPath: /0chain/config/n2n_delay.yaml
+              name: n2n-delay-yaml
+              subPath: n2n_delay.yaml
+            - mountPath: /0chain/config/sc.yaml
+              name: sc-config
+              subPath: sc.yaml
+            - mountPath: /0chain/config/b0owner_keys.txt
+              name: owner-config
+              subPath: b0owner_keys.txt
+            - mountPath: /0chain/config/0chain.yaml
+              name: zchain-yaml-config
+              subPath: 0chain.yaml
+            - mountPath: /0chain/config/redis
+              name: miner-redis-config
+            - mountPath: /0chain/data
+              name: miner-data-pvc-${n}
+            - mountPath: /0chain/log
+              name: miner-log-pvc-${n}
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: n2n-delay-yaml
+          configMap:
+            name: n2n-delay-yaml
+            defaultMode: 0755
+        - name: sc-config
+          configMap:
+            name: sc-config
+            defaultMode: 0755
+        - name: owner-config
+          configMap:
+            name: owner-config
+            defaultMode: 0755
+        - name: zchain-yaml-config
+          configMap:
+            name: zchain-yaml-config
+            defaultMode: 0755
+        - name: miner-redis-config
+          configMap:
+            name: miner-redis-config
+            defaultMode: 0755
+        - name: miner-data-pvc-${n}
+          persistentVolumeClaim:
+            claimName: miner-data-pvc-${n}
+        - name: miner-log-pvc-${n}
+          persistentVolumeClaim:
+            claimName: miner-log-pvc-${n}
+        - name: sm-config-pvc
+          persistentVolumeClaim:
+            claimName: sm-config-pvc
+        - name: nodes-yaml-pvc
+          persistentVolumeClaim:
+            claimName: nodes-yaml-pvc

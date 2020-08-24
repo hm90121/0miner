@@ -1,0 +1,129 @@
+From d8b0ec7e070cde02bff1298c5ec9f13de2a05237 Mon Sep 17 00:00:00 2001
+From: Tanuj Soni <tanuj@deqode.com>
+Date: Thu, 2 Apr 2020 15:25:16 +0530
+Subject: [PATCH] updated on-prem storage class to nfs
+
+---
+ 0chain_setup/0box/Volumes/0box-data-pvc.yaml     | 2 +-
+ 0chain_setup/0box/Volumes/0box-log-pvc.yaml      | 2 +-
+ 0chain_setup/0chain-aws-setup.sh                 | 2 +-
+ 0chain_setup/0proxy/Volumes/0proxy-data-pvc.yaml | 2 +-
+ 0chain_setup/0proxy/Volumes/0proxy-log-pvc.yaml  | 2 +-
+ 0chain_setup/Keygen/1-ms-keys-pvc.yaml           | 2 +-
+ 0chain_setup/Keygen/2-nodes-yaml-keys-pvc.yaml   | 2 +-
+ 0chain_setup/Keygen/3-blob-keys-pvc.yaml         | 2 +-
+ 0chain_setup/Keygen/4-zbox-config-pvc.yaml       | 2 +-
+ 9 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/0chain_setup/0box/Volumes/0box-data-pvc.yaml b/0chain_setup/0box/Volumes/0box-data-pvc.yaml
+index 889106f..bde1f7e 100644
+--- a/0chain_setup/0box/Volumes/0box-data-pvc.yaml
++++ b/0chain_setup/0box/Volumes/0box-data-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 100Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/0box/Volumes/0box-log-pvc.yaml b/0chain_setup/0box/Volumes/0box-log-pvc.yaml
+index d840070..bcfe062 100644
+--- a/0chain_setup/0box/Volumes/0box-log-pvc.yaml
++++ b/0chain_setup/0box/Volumes/0box-log-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 100Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/0chain-aws-setup.sh b/0chain_setup/0chain-aws-setup.sh
+index 801cabd..d3a66dd 100755
+--- a/0chain_setup/0chain-aws-setup.sh
++++ b/0chain_setup/0chain-aws-setup.sh
+@@ -297,7 +297,7 @@ kubeconfig="$PWD/../inventory/mycluster/artifacts/Kubeconfig_$cluster.conf"
+ count=${ceph_instance_count:-3}
+ kube_context=$(kubectl config current-context --kubeconfig ${kubeconfig})
+ echo -e "\e[32m Final Kubeconfig: ${kubeconfig}${NEWLINE}Final Count: ${count}${NEWLINE} Final context${kube_context}${NEWLINE} \e[39m"
+-host_address="${host_name}.testnet-0chain.net"
++host_address="${host_name}.devnet-0chain.net"
+ # host_address=$host_url
+ 
+ # Reset cluster if required
+diff --git a/0chain_setup/0proxy/Volumes/0proxy-data-pvc.yaml b/0chain_setup/0proxy/Volumes/0proxy-data-pvc.yaml
+index 01a3900..9453526 100644
+--- a/0chain_setup/0proxy/Volumes/0proxy-data-pvc.yaml
++++ b/0chain_setup/0proxy/Volumes/0proxy-data-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 100Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/0proxy/Volumes/0proxy-log-pvc.yaml b/0chain_setup/0proxy/Volumes/0proxy-log-pvc.yaml
+index 5cddac4..1ae5a55 100644
+--- a/0chain_setup/0proxy/Volumes/0proxy-log-pvc.yaml
++++ b/0chain_setup/0proxy/Volumes/0proxy-log-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 100Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/Keygen/1-ms-keys-pvc.yaml b/0chain_setup/Keygen/1-ms-keys-pvc.yaml
+index 5ba4493..af25544 100644
+--- a/0chain_setup/Keygen/1-ms-keys-pvc.yaml
++++ b/0chain_setup/Keygen/1-ms-keys-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 10Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/Keygen/2-nodes-yaml-keys-pvc.yaml b/0chain_setup/Keygen/2-nodes-yaml-keys-pvc.yaml
+index a2c46db..a4d6dc0 100644
+--- a/0chain_setup/Keygen/2-nodes-yaml-keys-pvc.yaml
++++ b/0chain_setup/Keygen/2-nodes-yaml-keys-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 10Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/Keygen/3-blob-keys-pvc.yaml b/0chain_setup/Keygen/3-blob-keys-pvc.yaml
+index 10a4469..2e94fb0 100644
+--- a/0chain_setup/Keygen/3-blob-keys-pvc.yaml
++++ b/0chain_setup/Keygen/3-blob-keys-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 10Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+diff --git a/0chain_setup/Keygen/4-zbox-config-pvc.yaml b/0chain_setup/Keygen/4-zbox-config-pvc.yaml
+index c415a8b..0c7f387 100644
+--- a/0chain_setup/Keygen/4-zbox-config-pvc.yaml
++++ b/0chain_setup/Keygen/4-zbox-config-pvc.yaml
+@@ -10,4 +10,4 @@ spec:
+   resources:
+     requests:
+       storage: 1Mi
+-  storageClassName: csi-cephfs
+\ No newline at end of file
++  storageClassName: nfs
+\ No newline at end of file
+-- 
+2.26.0
+

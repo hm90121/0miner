@@ -1,0 +1,26 @@
+1). Initializing required deployment configuration
+2). Configuring nodes for High Availability
+3). Deploying application load-balancer
+4). Waiting for Ip provisioning by cloud provider
+5). Updating DNS mapping for requested URL
+6). Generating app specific configuration
+7). Creating Sharders
+Creating service deployment Sharders_tmplt-1
+Creating service deployment Sharders_tmplt-2
+Creating service deployment Sharders_tmplt-3
+8). Creating Miners
+Creating service deployment Miners_tmplt-1
+Creating service deployment Miners_tmplt-2
+Creating service deployment Miners_tmplt-3
+9). Creating Blobbers
+Creating service deployment Blobbers_tmplt-1
+Creating service deployment Blobbers_tmplt-2
+Creating service deployment Blobbers_tmplt-3
+10). Creating 0Proxy
+Creating service deployment 0proxy-1
+11). Creating Explorer
+Creating service deployment Explorer-1
+12). Creating Recorder
+Creating service deployment Block_recorder-1
+13). Configuring Loadbalancer
+14). Succesfully created 0chain

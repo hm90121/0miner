@@ -1,0 +1,3 @@
+---
+# vars file for dns_update
+domain: "devnet-0chain.net."

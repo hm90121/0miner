@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: redis-${n}
+    tier: prod
+  name: redis-${n}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-${n}
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis-${n}
+        tier: prod
+    spec:
+      containers:
+        - image: redis:alpine
+          name: redis-${n}
+          resources:
+            limits:
+              cpu: 100m
+              memory: 100Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+          args:
+            - redis-server
+            - /0chain/config/redis/state.redis.conf
+          volumeMounts:
+            - mountPath: /0chain/config/redis
+              name: miner-redis-config
+            - mountPath: /0chain/data
+              name: miner-data-pvc-${n}
+      restartPolicy: Always
+      volumes:
+        - name: miner-redis-config
+          configMap:
+            name: miner-redis-config
+            defaultMode: 0755
+        - name: miner-data-pvc-${n}
+          persistentVolumeClaim:
+            claimName: miner-data-pvc-${n}

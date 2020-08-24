@@ -1,0 +1,129 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: blobber-${n}
+    tier: prod
+  name: blobber-${n}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blobber-${n}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: blobber-${n}
+        tier: prod
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - postgres-${n}
+                      - validator-${n}
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: ${REGISTRY_IMAGE}/blobber:${TAG}
+          imagePullPolicy: Always
+          name: blobber-${n}
+          args:
+            - ./bin/blobber
+            - --port
+            - "313${n}"
+            - --hostname
+            - ${host_address}
+            - --deployment_mode
+            - "0"
+            - --keys_file
+            - keysconfig/wallet.txt
+            - --files_dir
+            - /blobber/files
+            - --log_dir
+            - /blobber/log
+            - --db_dir
+            - /blobber/data
+            - --minio_file
+            - keysconfig/minio_config.txt
+          env:
+            - name: DOCKER
+              value: "true"
+            - name: DB_NAME
+              value: blobber_meta
+            - name: DB_USER
+              value: blobber_user
+            - name: DB_PASSWORD
+              value: blobber
+            - name: DB_HOST
+              value: postgres-${n}
+            - name: DB_PORT
+              value: "5432"
+          ports:
+            - containerPort: 313${n}
+          resources:
+            limits:
+              cpu: 100m
+              memory: 250Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+          volumeMounts:
+            - mountPath: /blobber/config
+              name: blobber-config
+            - mountPath: /blobber/keysconfig/magicBlock.json
+              name: magic-block-config
+              subPath: magicBlock.json
+            - mountPath: /blobber/keysconfig/wallet.txt
+              name: wallet-keys-config
+              subPath: wallet.txt
+            - mountPath: /blobber/files
+              name: valid-files-pvc-${n}
+            - mountPath: /blobber/data
+              name: blob-valid-data-pvc-${n}
+            - mountPath: /blobber/log
+              name: blob-valid-log-pvc-${n}
+            - mountPath: /blobber/keysconfig/minio_config.txt
+              name: minio-config
+              subPath: minio_config.txt
+            - mountPath: /blobber/sql
+              name: postgres-sql-pvc
+      restartPolicy: Always
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: magic-block-config
+          configMap:
+            name: magic-block-config
+            defaultMode: 0755
+        - name: wallet-keys-config
+          configMap:
+            name: wallet-keys-config
+            defaultMode: 0755
+        - name: minio-config
+          secret:
+            secretName: minio-config
+            defaultMode: 0755
+        - name: blob-valid-data-pvc-${n}
+          persistentVolumeClaim:
+            claimName: blob-valid-data-pvc-${n}
+        - name: blob-valid-log-pvc-${n}
+          persistentVolumeClaim:
+            claimName: blob-valid-log-pvc-${n}
+        - name: valid-files-pvc-${n}
+          persistentVolumeClaim:
+            claimName: valid-files-pvc-${n}
+        - name: postgres-sql-pvc
+          configMap:
+            name: blobber-sql
+            defaultMode: 0755
+        - name: blobber-config
+          configMap:
+            name: blobber-config
+            defaultMode: 0755

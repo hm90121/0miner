@@ -1,0 +1,4 @@
+Disk   SSD      HDD
+node4 /dev/sdb /dev/sdc node1
+node5 /dev/sde /dev/sdd node2
+node6 /dev/sdc /dev/sdd node3

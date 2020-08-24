@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: worker
+    tier: prod
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: worker
+        tier: prod
+    spec:
+      containers:
+        - image: ${REGISTRY_IMAGE}/block_worker:${TAG}
+          imagePullPolicy: Always
+          name: worker
+          env:
+            - name: DOCKER
+              value: "true"
+          ports:
+            - containerPort: 9091
+          args:
+            - ./bin/blockworker
+            - --deployment_mode
+            - "0"
+            - --keys_file
+            - /blockworker/config/blockworker_keys.txt
+            - --magic_block 
+            - /blockworker/config/magicBlock.json
+          resources:
+            limits:
+              cpu: 100m
+              memory: 250Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+          volumeMounts:
+            - mountPath: /blockworker/config
+              name: sm-config-pvc
+            - mountPath: /blockworker/config/blockworker.yaml
+              name: worker-settings
+              subPath: blockworker.yaml
+            - mountPath: /blockworker/config/blockworker_keys.txt
+              name: worker-config-pvc
+              subPath: blockworker_keys.txt
+            - mountPath: /blockworker/log
+              name: worker-log-pvc
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: sm-config-pvc
+          persistentVolumeClaim:
+            claimName: sm-config-pvc
+        - name: worker-settings
+          configMap:
+            name: worker-settings
+            defaultMode: 0755
+        - name: worker-log-pvc
+          persistentVolumeClaim:
+            claimName: worker-log-pvc
+        - name: worker-config-pvc
+          persistentVolumeClaim:
+            claimName: worker-config-pvc

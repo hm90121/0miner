@@ -1,0 +1,32 @@
+apiVersion: openebs.io/v1alpha1
+kind: BlockDevice
+metadata:
+  name: ${disk_name}-ndm
+  labels:
+    kubernetes.io/hostname: ${node_name} # like gke-openebs-user-default-pool-044afcb8-bmc0
+    ndm.io/managed: "false" # for manual blockdevice creation put false
+    ndm.io/blockdevice-type: blockdevice
+status:
+  claimState: Claimed
+  state: Active
+spec:
+  capacity:
+    logicalSectorSize: 512
+    storage: ${disk_size} #like 53687091200
+  details:
+    firmwareRevision: ${device_model}
+    model: PersistentDisk-${disk_type} # like PersistentDisk
+    serial: on-prem-disk-${disk_type} # like google-disk-2
+    compliance: NA #like "SPC-4"
+    vendor: on-prem #like Google
+  devlinks:
+    - kind: by-id
+      links:
+        - ${device_path_sh} # like /dev/disk/by-id/scsi-0Google_PersistentDisk_disk-2
+        - ${device_path_lo} # like /dev/disk/by-id/google-disk-2
+    - kind: by-path
+      links:
+        - ${device_path_li} # like /dev/disk/by-path/virtio-pci-0000:00:03.0-scsi-0:0:2:0
+  nodeAttributes:
+    nodeName: ${node_name} # output of `kubectl get nodes` can be used
+  path: ${disk_path} # like /dev/sdb1

@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: blobber-stack
+  name: blobber-stack
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      containers:
+        - name: blobber-stack
+          imagePullPolicy: Always
+          image: 0chaintest/magic-block:latest
+          args:
+            - bash
+            - -c
+            # - "date; echo sleeping....; sleep 300s;"
+            - "./stake_blobbers --wallet_file '${cluster}_blob_keys.json' --block_worker 'http://${host_address}/dns' --tokens 1 --total_blobbers ${blobber_count}"
+          volumeMounts:
+            - mountPath: /0chain/go/src/magicBlock/${cluster}_blob_keys.json
+              name: delegate-wallet-json
+              subPath: ${cluster}_blob_keys.json
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: delegate-wallet-json
+          configMap:
+            name: delegate-wallet-json
+            defaultMode: 0755

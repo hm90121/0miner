@@ -1,0 +1,8 @@
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  ambassador_id: ambassador-two
+  name:  blobber-${n}
+spec:
+  port: 313${n}
+  service: blobber-${n}:313${n}

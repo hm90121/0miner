@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: 0proxy
+    tier: prod
+  name: zproxy
+spec:
+  ports:
+  - name: "zproxy-port"
+    port: 31082
+    # nodePort: 9082
+  type: NodePort
+  selector:
+    app: 0proxy

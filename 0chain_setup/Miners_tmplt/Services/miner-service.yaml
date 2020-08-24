@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: miner-${n}
+    tier: prod
+  name: miner-${n}
+spec:
+  ports:
+  - name: "miner-${n}"
+    port: 312${n}
+    targetPort: 312${n}
+  type: NodePort
+  selector:
+    app : miner-${n}
+    tier: prod

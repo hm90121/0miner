@@ -1,0 +1,8 @@
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name:  sharder-${n}
+spec:
+  ambassador_id: ambassador-two
+  port: 311${n}
+  service: sharder-${n}:311${n}

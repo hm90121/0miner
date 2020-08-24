@@ -1,0 +1,18 @@
+{
+  "Comment": "CREATE a record for ${host_url} & ${host_ip}",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "${host_url}",
+        "Type": "${record_type}",
+        "TTL": 300,
+        "ResourceRecords": [
+          {
+            "Value": "${host_ip}"
+          }
+        ]
+      }
+    }
+  ]
+}

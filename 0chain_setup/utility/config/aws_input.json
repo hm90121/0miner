@@ -1,0 +1,27 @@
+{
+  "cloud_provider": "aws",
+  "cluster_name": "one",
+  "sharder_count": "3",
+  "miner_count": "6",
+  "blobber_count": "12",
+  "deploy_main": true,
+  "deploy_auxiliary": true,
+  "host_address": "one",
+  "kubeconfig_path": "",
+  "n2n_delay": "100",
+  "fs_type": "gp2",
+  "repo_type": "0chaintest",
+  "image_tag": "v1.0.16",
+  "record_type": "CNAME",
+  "deployment_type": "public",
+  "deploy_svc": {
+    "miner": true,
+    "sharder": true,
+    "blobber": true,
+    "worker": true,
+    "explorer": true,
+    "recorder": true,
+    "zbox": false,
+    "zproxy": true
+  }
+}

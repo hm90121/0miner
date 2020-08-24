@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: worker-settings
+data:
+  blockworker.yaml: |-
+    version: 1.0
+
+    logging:
+      level: "info"
+      console: false # printing log to console is only supported in development mode
+
+    server_chain:
+      id: "0afc093ffb509f059c55478bc1a60351cef7b4e9c008a53a6cc8241ca8617dfe"
+      signature_scheme: "bls0chain"
+
+    port: 9091
+
+    mongo:
+      url: mongodb://mongo-0.mongo.${cluster}:27017,mongo-1.mongo.${cluster}:27017,mongo-2.mongo.${cluster}:27017
+      db_name: block-recorder
+      pool_size: 2
+
+    worker:
+      round_fetch_delay: 1000
+      magic_block_worker: 5 # in seconds
+      round_fetch_retires: 100 # Retries to fetch a round (if failed)
+      dns_only: false # Run only DNS service, Do not fetch blocks

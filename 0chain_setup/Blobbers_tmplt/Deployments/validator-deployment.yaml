@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: validator-${n}
+  name: validator-${n}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: validator-${n}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: validator-${n}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - postgres-${n}
+                      - blobber-${n}
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: ${REGISTRY_IMAGE}/validator:${TAG}
+          imagePullPolicy: Always
+          name: validator-${n}
+          args:
+            - ./bin/validator
+            - --port
+            - "314${n}"
+            - --hostname
+            - validator-${n}
+            - --deployment_mode
+            - "0"
+            - --keys_file
+            - keysconfig/b0bnode${n}_keys.txt
+            - --log_dir
+            - /blobber/log
+          env:
+            - name: DOCKER
+              value: " true"
+          ports:
+            - containerPort: 314${n}
+          resources:
+            limits:
+              cpu: 50m
+              memory: 150Mi
+            requests:
+              cpu: 20m
+              memory: 40Mi
+          volumeMounts:
+            - mountPath: /blobber/config
+              name: blobber-config
+            - mountPath: /blobber/data
+              name: blob-valid-data-pvc-${n}
+            - mountPath: /blobber/log
+              name: blob-valid-log-pvc-${n}
+            - mountPath: /blobber/keysconfig
+              name: blob-config-pvc
+            - mountPath: /blobber/keysconfig/nodes.yaml
+              name: nodes-yaml-pvc
+              subPath: nodes.yaml
+      imagePullSecrets:
+        - name: regcred
+      restartPolicy: Always
+      volumes:
+        - name: blob-config-pvc
+          persistentVolumeClaim:
+            claimName: blob-config-pvc
+        - name: nodes-yaml-pvc
+          persistentVolumeClaim:
+            claimName: nodes-yaml-pvc
+        - name: blob-valid-data-pvc-${n}
+          persistentVolumeClaim:
+            claimName: blob-valid-data-pvc-${n}
+        - name: blob-valid-log-pvc-${n}
+          persistentVolumeClaim:
+            claimName: blob-valid-log-pvc-${n}
+        - name: blobber-config
+          configMap:
+            name: blobber-config
+            defaultMode: 0755

@@ -1,0 +1,35 @@
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  cephVersion:
+    image: ceph/ceph:v14.2.5
+    allowUnsupported: false
+  dataDirHostPath: /var/lib/rook
+  skipUpgradeChecks: false
+  continueUpgradeAfterChecksEvenIfNotHealthy: false
+  mon:
+    count: ${count}
+    allowMultiplePerNode: true
+  dashboard:
+    enabled: false
+    ssl: true
+    rulesNamespace: rook-ceph
+  monitoring:
+    enabled: false  # requires Prometheus to be pre-installed
+    rulesNamespace: rook-ceph
+  network:
+    hostNetwork: false
+  rbdMirroring:
+    workers: 0
+  annotations:
+  resources:
+  removeOSDsIfOutAndSafeToRemove: false
+  storage: # cluster level storage configuration and selection
+    useAllNodes: true
+    useAllDevices: true 
+    config:
+    directories:
+    - path: /var/lib/rook

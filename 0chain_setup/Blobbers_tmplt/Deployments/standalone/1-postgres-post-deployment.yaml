@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: postgres-post-${n}
+  name: postgres-post-${n}
+spec:
+  template:
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:11
+          args:
+            - bash
+            - /blobber/bin/postgres-entrypoint.sh
+          env:
+            - name: POSTGRES_HOST
+              value: postgres-${n}
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+          volumeMounts:
+            - mountPath: /blobber/bin
+              name: postgres-bin-pvc
+            - mountPath: /blobber/sql
+              name: postgres-sql-pvc
+      restartPolicy: Never
+      volumes:
+        - name: postgres-sql-pvc
+          configMap:
+            name: blobber-sql
+            defaultMode: 0755
+        - name: postgres-bin-pvc
+          configMap:
+            name: blobber-bin
+            defaultMode: 0755

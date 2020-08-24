@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: recorder
+    tier: prod
+  name: recorder
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: recorder
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: recorder
+        tier: prod
+    spec:
+      containers:
+        - image: 0chaintest/recorder:v1.0.14
+          imagePullPolicy: Always
+          name: recorder
+          env:
+          - name: DOCKER
+            value: "true"
+          ports:
+          - containerPort: 3000
+          command: ["make", "dev-server"]
+          resources:
+            limits:
+              cpu: 100m
+              memory: 250Mi
+            requests:
+              cpu: 20m
+              memory: 50Mi
+          volumeMounts:
+          - mountPath: /opt/config/development.json
+            name: recorder-settings
+            subPath: development.json
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      volumes:
+      - name: recorder-settings
+        configMap:
+          name: recorder-settings
+          defaultMode: 0755     

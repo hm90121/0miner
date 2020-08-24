@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: data-nfs-nfs-server-provisioner-0
+  labels:
+    tier: prod
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: ${disk_size}i
+  volumeName: "data-nfs-server-provisioner"
+  storageClassName: manual

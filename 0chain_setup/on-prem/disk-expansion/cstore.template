@@ -1,0 +1,5 @@
+{
+  "deviceID": "${device_path_sh}",
+  "inUseByPool": true,
+  "name": "${disk_name}-ndm"
+}

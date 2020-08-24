@@ -1,0 +1,27 @@
+{
+  "cloud_provider": "oci",
+  "cluster_name": "miles",
+  "sharder_count": "2",
+  "miner_count": "3",
+  "blobber_count": "6",
+  "deploy_main": true,
+  "deploy_auxiliary": true,
+  "host_address": "miles",
+  "kubeconfig_path": "",
+  "n2n_delay": 300,
+  "fs_type": "oci",
+  "repo_type": "0chaintest",
+  "image_tag": "v1.0.10",
+  "record_type": "A",
+  "deployment_type": "PRIVATE",
+  "deploy_svc": {
+    "miner": true,
+    "sharder": true,
+    "blobber": true,
+    "worker": true,
+    "recorder": true,
+    "explorer": true,
+    "zbox": false,
+    "zproxy": true
+  }
+}

@@ -1,0 +1,20 @@
+{
+    "Rules": [
+        {
+            "Filter": {
+                "Prefix": ""
+            },
+            "Status": "Enabled",
+            "Transitions": [
+                {
+                    "Days": ${duration},
+                    "StorageClass": "GLACIER"
+                }
+            ],
+            "Expiration": {
+                "Days": 3650
+            },
+            "ID": "BackupPolicy-${cluster}"
+        }
+    ]
+}

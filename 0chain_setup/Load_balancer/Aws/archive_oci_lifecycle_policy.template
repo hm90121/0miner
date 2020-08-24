@@ -1,0 +1,10 @@
+[
+  {
+    "action": "ARCHIVE",
+    "is-enabled": true,
+    "name": "BackupPolicy-${cluster}",
+    "object-name-filter": null,
+    "time-amount": ${duration},
+    "time-unit": "DAYS"
+  }
+]

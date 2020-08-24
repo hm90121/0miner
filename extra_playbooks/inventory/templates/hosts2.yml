@@ -1,0 +1,37 @@
+all:
+  hosts:
+    node1:
+      ansible_host: 4.6.5.7
+      ip: 4.6.5.7
+      access_ip: 4.6.5.7
+    node2:
+      ansible_host: 6.8.7.9
+      ip: 6.8.7.9
+      access_ip: 6.8.7.9
+    node3:
+      ansible_host: 5.4.7.8
+      ip: 5.4.7.8
+      access_ip: 5.4.7.8
+    node4:
+      ansible_host: 3.5.8.6
+      ip: 3.5.8.6
+      access_ip: 3.5.8.6
+  children:
+    kube-master:
+      hosts:
+        node1:
+    kube-node:
+      hosts:
+        node1:
+        node2:
+        node3:
+        node4:
+    etcd:
+      hosts:
+        node1:
+    k8s-cluster:
+      children:
+        kube-master:
+        kube-node:
+    calico-rr:
+      hosts: {}

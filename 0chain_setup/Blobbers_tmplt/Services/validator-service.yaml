@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: validator
+  name: validator-${n}
+spec:
+  ports:
+  - name: "314${n}"
+    port: 314${n}
+    targetPort: 314${n}
+  type: NodePort
+  selector:
+    app: validator-${n}
+

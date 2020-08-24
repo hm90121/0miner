@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: magic-block
+  name: magic-block
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      containers:
+        - name: magic-block
+          imagePullPolicy: Always
+          image: 0chaintest/magic-block:latest
+          args:
+            - bash
+            - -c
+            # - "date; echo sleeping....; sleep 300s;"
+            - "go mod download && go build -tags bn256 magicBlock.go && ./magicBlock"
+          volumeMounts:
+            - mountPath: /config
+              name: sm-config-pvc
+            - mountPath: /config/nodes.yaml
+              name: nodes-yaml-pvc
+              subPath: nodes.yaml
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: regcred
+      volumes:
+        - name: sm-config-pvc
+          persistentVolumeClaim:
+            claimName: sm-config-pvc
+        - name: nodes-yaml-pvc
+          persistentVolumeClaim:
+            claimName: nodes-yaml-pvc
