@@ -24,7 +24,6 @@ script_index=2
 development=false
 standalone=true
 
-block_worker_url="http://one.devnet-0chain.net/dns"
 source ./function.sh
 
 if [ -z "$1" ]; then
@@ -159,6 +158,7 @@ echo -e "\e[93m =================== Creating namespace ${cluster} & Adding node 
 kubectl create ns $cluster --kubeconfig $kubeconfig $KUBE_EXTRA_ARGS
 sleep 3s
 kubectl create -f regcred.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+mkdir -p k8s-yamls && rm -f k8s-yamls/*
 
 if [[ $n2n_delay -gt 0 ]]; then
   add_delay $n2n_delay
@@ -182,7 +182,9 @@ if [ $cloud_provider == "on-premise" ]; then
   log_volume_size=1
 fi
 host_address="216.218.228.197"
-block_worker_url="http://one.devnet-0chain.net/dns"
+block_worker_url="http://${network}.devnet-0chain.net/dns"
+
+echo $network
 
 if [[ $m == 1 ]]; then
   config_dir="Sharders_tmplt/Configmap_enterprise"
@@ -210,7 +212,6 @@ configure_standalone_dp
 
 config_dir="Configmap_enterprise"
 pushd Keygen
-mkdir -p k8s-yamls && rm -f k8s-yamls/*
 blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
 popd
 blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
@@ -220,6 +221,11 @@ if [[ $deploy_main == true ]]; then
     if [[ $is_deploy_sharder != false ]]; then
       echo -e "\e[93m =================== Creating the Sharder components =================== \e[39m" && append_logs "Creating Sharders"
       k8s_deply Sharders_tmplt $s 8
+      for n in $(seq $s); do
+        n=$(validate_port $n)
+        kubectl wait --for=condition=available deployment/sharder-$n -n ${cluster} --kubeconfig $kubeconfig
+      done
+      [[ $standalone == true ]] && expose_deployment_lb sharder $s 311
     # progress_bar $((20 * $s))
     else
       echo -e "Skipping sharder service"
@@ -232,7 +238,12 @@ if [[ $deploy_main == true ]]; then
     if [[ $is_deploy_miner != false ]]; then
       echo -e "\e[93m =================== Creating the Miner components =================== \e[39m" && append_logs "Creating Miners"
       k8s_deply Miners_tmplt $m 4
+      for n in $(seq $m); do
+        n=$(validate_port $n)
+        kubectl wait --for=condition=available deployment/miner-$n -n ${cluster} --kubeconfig $kubeconfig
+      done
       # progress_bar $((15 * $m))
+      [[ $standalone == true ]] && expose_deployment_lb miner $m 312
     else
       echo -e "Skipping miner service"
     fi
@@ -245,6 +256,7 @@ if [[ $deploy_main == true ]]; then
       echo -e "\e[93m =================== Creating the Blobber and Validator components =================== \e[39m" && append_logs "Creating Blobbers"
       k8s_deply Blobbers_tmplt $b 2
       host_address=$(get_host external)
+      [[ $standalone == true ]] && expose_deployment_lb blobber $b 313 && exit
       # progress_bar $((10 * $b))
     else
       echo -e "Skipping blobber service"

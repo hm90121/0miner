@@ -660,6 +660,7 @@ configure_standalone_dp() {
   kubectl create configmap wallet-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=wallet.txt=on-prem/wallet/wallet.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/wallet.yaml
 
   if [[ $b == 1 ]]; then
+    config_dir="Configmap_enterprise"
     blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
   fi
 }
