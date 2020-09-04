@@ -232,7 +232,7 @@ cluster_reset() {
 
   local ns_nginx=$(kubectl get ns --kubeconfig ${kubeconfig} | grep "ingress-nginx")
   if [[ ! -z $ns_nginx ]]; then
-    kubectl delete -f ./nginx/ingress-nginx.yaml --kubeconfig ${kubeconfig}
+        kubectl delete -f ./nginx/k8s-yamls/ --kubeconfig ${kubeconfig}
   fi
   popd
 

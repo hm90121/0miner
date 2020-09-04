@@ -43,7 +43,7 @@ spec:
             - --deployment_mode
             - "0"
             - --keys_file
-            - keysconfig/wallet.txt
+            - keysconfig/wallet${n}_keys.txt
             - --files_dir
             - /blobber/files
             - --log_dir

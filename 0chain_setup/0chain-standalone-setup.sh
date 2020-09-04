@@ -159,6 +159,7 @@ kubectl create ns $cluster --kubeconfig $kubeconfig $KUBE_EXTRA_ARGS
 sleep 3s
 kubectl create -f regcred.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
 mkdir -p k8s-yamls && rm -f k8s-yamls/*
+mkdir -p Keygen/k8s-yamls && rm -f k8s-yamls/*
 
 if [[ $n2n_delay -gt 0 ]]; then
   add_delay $n2n_delay
@@ -169,7 +170,6 @@ progress_bar 6
 kubectl create configmap n2n-delay-yaml --kubeconfig ${kubeconfig} --namespace $cluster --from-file=Keygen/n2n_delay.yaml -o yaml $KUBE_EXTRA_ARGS >Keygen/k8s-yamls/n2n-delay.yaml
 
 echo -e "\e[93m =================== Applying cloud specififc config =================== \n \e[39m"
-ns_ambassador=$(kubectl get ns --kubeconfig ${kubeconfig} | grep "ambassador" | awk '{print $1}')
 
 if [ $cloud_provider == "on-premise" ]; then
   host_zone_id="/hostedzone/Z3IUIOABG02M88" && domain_name="devnet-0chain.net"
@@ -181,20 +181,23 @@ if [ $cloud_provider == "on-premise" ]; then
   data_volume_size=5
   log_volume_size=1
 fi
-host_address="216.218.228.197"
+
+host_address=$host_ip
+echo $host_address
 block_worker_url="http://${network}.devnet-0chain.net/dns"
+host_address=$(get_host internal)
 
 echo $network
 
-if [[ $m == 1 ]]; then
-  config_dir="Sharders_tmplt/Configmap_enterprise"
-  for file in $(ls $config_dir); do
-    if [[ $file == *.yaml ]]; then
-      echo -e "\e[32m Creating kubernetes Configmap ${file}... \e[39m"
-      kubectl create -f $config_dir/${file} --kubeconfig $kubeconfig --namespace $cluster
-    fi
-  done
-fi
+# if [[ $m == 1 ]]; then
+#   config_dir="Sharders_tmplt/Configmap_enterprise"
+#   for file in $(ls $config_dir); do
+#     if [[ $file == *.yaml ]]; then
+#       echo -e "\e[32m Creating kubernetes Configmap ${file}... \e[39m"
+#       kubectl create -f $config_dir/${file} --kubeconfig $kubeconfig --namespace $cluster
+#     fi
+#   done
+# fi
 
 if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
   pushd Load_balancer/metallb
@@ -205,10 +208,66 @@ if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
   popd
 fi
 
-configure_standalone_dp
-# kubectl create configmap magic-block-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=on-prem/wallet/magicBlock.json -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/magic_block.yaml
-# kubectl create configmap wallet-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=wallet.txt=on-prem/wallet/wallet_blobber.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/wallet.yaml
-# kubectl create configmap owner-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=b0owner_keys.txt=on-prem/wallet/owner_keys.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/owner.yaml
+pushd Load_balancer
+    is_nginx=$(kubectl get namespace --kubeconfig ${kubeconfig} | grep "ingress-nginx")
+    if [[ -z $is_nginx ]]; then
+      pushd nginx
+      mkdir -p k8s-yamls && rm -f k8s-yamls/*
+      echo -e "\e[93m =================== Deploying nginx =================== \e[39m" && append_logs "Deploying secondary load balancer for blobber service"
+      cluster=${cluster}
+      cluster=ingress-nginx envsubst <ingress-nginx_custom.template >./k8s-yamls/ingress-nginx_custom.yaml
+      kubectl create -f ./k8s-yamls/ingress-nginx_custom.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+      # kubectl create -f ./ingress-nginx.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+      kubectl wait --namespace ingress-nginx \
+        --for=condition=ready pod \
+        --selector=app.kubernetes.io/component=controller \
+        --timeout=120s
+      popd
+    fi
+
+    append_logs "Creating DNS Mapping"
+    create_dns_mapping ingress-nginx
+  
+    append_logs "Configuring Loadbalancer"
+    pushd nginx
+    patch_ngnix_lb 311 $s sharder
+    patch_ngnix_lb 312 $m miner
+    patch_ngnix_lb 313 $b blobber
+    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    # kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission-${cluster} --kubeconfig ${kubeconfig}
+    # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress.template >./k8s-yamls/nginx-path-ingress.yaml
+    # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress-rec.template >./k8s-yamls/nginx-path-ingress-rec.yaml
+    cluster=${cluster} host_address=${host_address} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
+    cluster=${cluster} host_address=${host_address} envsubst <kibana-ingress.template >./k8s-yamls/kibana-ingress.yaml
+    # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress-rec.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    popd
+    popd
+
+
+    echo -e "\e[93m =================== Generating 0chain keys and config file =================== \e[39m" && append_logs "Generating app specific configuration"
+    pushd Keygen
+    mkdir -p k8s-yamls && rm -f k8s-yamls/*
+    [ -f ./key-gen.yaml ] && rm ./key-gen.yaml
+    [[ $cloud_provider == "on-premise" ]] && blobber_host_address=$(get_host internal) || blobber_host_address=$(get_host external)
+    host_address=${blobber_host_address} s=${s} m=${m} b=${b} dtype=${dtype} envsubst <key-gen.template >k8s-yamls/key-gen.yaml
+    pushd Volumes
+    for file in $(ls *.yaml -p | grep -v /); do
+      rwm_sc=${rwm_sc} envsubst <${file} >../k8s-yamls/${file}
+      kubectl create -f ../k8s-yamls/${file} --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+    done
+    popd
+    kubectl create -f k8s-yamls/key-gen.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+    kubectl wait --for=condition=complete jobs/gen-keys -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
+    kubectl create -f magic-block.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+    kubectl wait --for=condition=complete jobs/magic-block -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
+    blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
+    popd
+    blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
+  else
+    configure_standalone_dp
+  fi
 
 config_dir="Configmap_enterprise"
 pushd Keygen
@@ -225,7 +284,6 @@ if [[ $deploy_main == true ]]; then
         n=$(validate_port $n)
         kubectl wait --for=condition=available deployment/sharder-$n -n ${cluster} --kubeconfig $kubeconfig
       done
-      [[ $standalone == true ]] && expose_deployment_lb sharder $s 311
     # progress_bar $((20 * $s))
     else
       echo -e "Skipping sharder service"
@@ -243,7 +301,6 @@ if [[ $deploy_main == true ]]; then
         kubectl wait --for=condition=available deployment/miner-$n -n ${cluster} --kubeconfig $kubeconfig
       done
       # progress_bar $((15 * $m))
-      [[ $standalone == true ]] && expose_deployment_lb miner $m 312
     else
       echo -e "Skipping miner service"
     fi
@@ -255,8 +312,6 @@ if [[ $deploy_main == true ]]; then
     if [[ $is_deploy_blobber != false ]]; then
       echo -e "\e[93m =================== Creating the Blobber and Validator components =================== \e[39m" && append_logs "Creating Blobbers"
       k8s_deply Blobbers_tmplt $b 2
-      host_address=$(get_host external)
-      [[ $standalone == true ]] && expose_deployment_lb blobber $b 313 && exit
       # progress_bar $((10 * $b))
     else
       echo -e "Skipping blobber service"
