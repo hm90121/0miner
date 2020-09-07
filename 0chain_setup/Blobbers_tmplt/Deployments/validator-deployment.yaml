@@ -59,15 +59,15 @@ spec:
           volumeMounts:
             - mountPath: /blobber/config
               name: blobber-config
+	          - mountPath: /blobber/keysconfig/magicBlock.json
+              name: magic-block-config
+              subPath: magicBlock.json
             - mountPath: /blobber/data
               name: blob-valid-data-pvc-${n}
             - mountPath: /blobber/log
               name: blob-valid-log-pvc-${n}
             - mountPath: /blobber/keysconfig
               name: blob-config-pvc
-            - mountPath: /blobber/keysconfig/nodes.yaml
-              name: nodes-yaml-pvc
-              subPath: nodes.yaml
       imagePullSecrets:
         - name: regcred
       restartPolicy: Always
@@ -75,9 +75,6 @@ spec:
         - name: blob-config-pvc
           persistentVolumeClaim:
             claimName: blob-config-pvc
-        - name: nodes-yaml-pvc
-          persistentVolumeClaim:
-            claimName: nodes-yaml-pvc
         - name: blob-valid-data-pvc-${n}
           persistentVolumeClaim:
             claimName: blob-valid-data-pvc-${n}

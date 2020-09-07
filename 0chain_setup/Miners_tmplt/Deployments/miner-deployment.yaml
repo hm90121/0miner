@@ -38,7 +38,7 @@ spec:
           command:
             - /bin/sh
             - -c
-            - mkdir -p /0chain/data/rocksdb && mkdir -p /0chain/data/redis/state && mkdir -p /0chain/data/redis/transactions &&  chmod -R 777 /0chain/data/redis && ./bin/miner --deployment_mode 0 --keys_file config/b0mnode${n}_keys.txt --delay_file config/n2n_delay.yaml
+            - mkdir -p /0chain/data/rocksdb && mkdir -p /0chain/data/redis/state && mkdir -p /0chain/data/redis/transactions &&  chmod -R 777 /0chain/data/redis && ./bin/miner --deployment_mode 0 --keys_file config/b0mnode${n}_keys.txt
           env:
             - name: DOCKER
               value: "true"
@@ -54,20 +54,20 @@ spec:
               cpu: 30m
               memory: 50Mi
           volumeMounts:
+            - mountPath: /0chain/config/magicBlock.json
+              name: magic-block-config
+              subPath: magicBlock.json
             - mountPath: /0chain/config
               name: sm-config-pvc
-            - mountPath: /0chain/config/nodes.yaml
-              name: nodes-yaml-pvc
-              subPath: nodes.yaml
+            - mountPath: /0chain/config/b0owner_keys.txt
+              name: owner-keys-config
+              subPath: b0owner_keys.txt  
             - mountPath: /0chain/config/n2n_delay.yaml
               name: n2n-delay-yaml
               subPath: n2n_delay.yaml
             - mountPath: /0chain/config/sc.yaml
               name: sc-config
               subPath: sc.yaml
-            - mountPath: /0chain/config/b0owner_keys.txt
-              name: owner-config
-              subPath: b0owner_keys.txt
             - mountPath: /0chain/config/0chain.yaml
               name: zchain-yaml-config
               subPath: 0chain.yaml
@@ -81,6 +81,14 @@ spec:
         - name: regcred
       restartPolicy: Always
       volumes:
+        - name: magic-block-config
+          configMap:
+            name: magic-block-config
+            defaultMode: 0755
+        - name: owner-keys-config
+          configMap:
+            name: owner-keys-config
+            defaultMode: 0755 
         - name: n2n-delay-yaml
           configMap:
             name: n2n-delay-yaml
@@ -88,10 +96,6 @@ spec:
         - name: sc-config
           configMap:
             name: sc-config
-            defaultMode: 0755
-        - name: owner-config
-          configMap:
-            name: owner-config
             defaultMode: 0755
         - name: zchain-yaml-config
           configMap:
@@ -110,6 +114,3 @@ spec:
         - name: sm-config-pvc
           persistentVolumeClaim:
             claimName: sm-config-pvc
-        - name: nodes-yaml-pvc
-          persistentVolumeClaim:
-            claimName: nodes-yaml-pvc

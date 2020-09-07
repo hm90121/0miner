@@ -34,44 +34,12 @@ spec:
             - redis-server
             - /0chain/config/redis/state.redis.conf
           volumeMounts:
-            - mountPath: /0chain/config
-              name: sm-config-pvc
-            - mountPath: /0chain/config/nodes.yaml
-              name: nodes-yaml-pvc
-              subPath: nodes.yaml
-            - mountPath: /0chain/config/sc.yaml
-              name: sc-config
-              subPath: sc.yaml
-            - mountPath: /0chain/config/b0owner_keys.txt
-              name: owner-config
-              subPath: b0owner_keys.txt
-            - mountPath: /0chain/config/0chain.yaml
-              name: zchain-yaml-config
-              subPath: 0chain.yaml
             - mountPath: /0chain/config/redis
               name: miner-redis-config
             - mountPath: /0chain/data
               name: miner-data-pvc-${n}
       restartPolicy: Always
       volumes:
-        - name: sm-config-pvc
-          persistentVolumeClaim:
-            claimName: sm-config-pvc
-        - name: nodes-yaml-pvc
-          persistentVolumeClaim:
-            claimName: nodes-yaml-pvc
-        - name: sc-config
-          configMap:
-            name: sc-config
-            defaultMode: 0755
-        - name: owner-config
-          configMap:
-            name: owner-config
-            defaultMode: 0755
-        - name: zchain-yaml-config
-          configMap:
-            name: zchain-yaml-config
-            defaultMode: 0755
         - name: miner-redis-config
           configMap:
             name: miner-redis-config
