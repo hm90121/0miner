@@ -1,18 +1,19 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # set -x
 # MINER=3
 # SHARDER=2
 # BLOBBER=4
 # PUBLIC_ENDPOINT=example.com
-# host_address=$PUBLIC_ENDPOINT
+host_address=$PUBLIC_ENDPOINT
+host_ip=$PUBLIC_IP
 # MPORT=707
 # SPORT=717
 # BPORT=727
 # dtype=PUBLIC
 # port=123
-host_ip=$host_address
 
-echo "v1.0.16"
+echo "v1.0.17"
+echo ${host_address}
 
 validate_port() {
   if [[ $1 -lt 10 ]]; then
@@ -29,7 +30,7 @@ key_gen_miner() {
     n=$(validate_port $n)
     port=${3}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    ./keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -55,7 +56,7 @@ key_gen() {
     n=$(validate_port $n)
     port=${3}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    ./keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -74,13 +75,13 @@ EOF
   done
 }
 
-key_gen() {
+key_gen_blobber() {
   echo "${5}s:" >>/config/nodes.yaml
   for n in $(seq 1 $(($1 + 0))); do
     n=$(validate_port $n)
     port=${3}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    ./keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /blob-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /blob-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -111,5 +112,5 @@ fi
 
 if [[ "$BLOBBER" -ne "0" ]]; then
   echo -e "Creating keys for BLOBBER \n"
-  key_gen $BLOBBER $PUBLIC_ENDPOINT $BPORT b blobber
+  key_gen_blobber $BLOBBER $PUBLIC_ENDPOINT $BPORT b blobber
 fi
