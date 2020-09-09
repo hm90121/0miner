@@ -66,7 +66,7 @@ spec:
             - mountPath: /0chain/config/minio_config.txt
               name: minio-config
               subPath: minio_config.txt
-	          - mountPath: /0chain/config/b0owner_keys.txt
+            - mountPath: /0chain/config/b0owner_keys.txt
               name: owner-keys-config
               subPath: b0owner_keys.txt  
             - mountPath: /0chain/config/0chain.yaml

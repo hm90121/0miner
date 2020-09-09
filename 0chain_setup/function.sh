@@ -232,7 +232,9 @@ cluster_reset() {
 
   local ns_nginx=$(kubectl get ns --kubeconfig ${kubeconfig} | grep "ingress-nginx")
   if [[ ! -z $ns_nginx ]]; then
-        kubectl delete -f ./nginx/k8s-yamls/ --kubeconfig ${kubeconfig}
+    pushd Load_balancer
+    kubectl delete -f ./nginx/k8s-yamls/ --kubeconfig ${kubeconfig}
+    kubectl delete ns ingress-nginx
   fi
   popd
 
@@ -306,7 +308,7 @@ k8s_deply() {
   rm -f k8s-yamls/*
 
   [[ ! -z $dtype && $dtype == "PRIVATE" ]] && config_dir="Configmap_enterprise" || config_dir="Configmap"
-  [[ ! -z $standalone && $standalone == true ]] && deploy_dir="Deployments/standalone" || deploy_dir="Deployments"
+  [[ ! -z $standalone && $standalone == true ]] && deploy_dir="Deployments" || deploy_dir="Deployments"
 
   for file in $(ls $config_dir); do
     if [[ $file == *.yaml ]]; then
@@ -364,24 +366,29 @@ unit_deploy() {
 }
 
 patch_ngnix_lb() {
-  echo -e "\e[93m =================== Patching NGINX for TCP & URL Mappings =================== \e[39m"
-  mkdir -p k8s-yamls && rm -f k8s-yamls/*
-
-  cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
-  envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
+  echo -e "\e[93m =================== Patching NGINX for TCP & URL Mappings =================== \e[39m" 
+  if [[ ! -f k8s-yamls/nginx_cm_tcp.yaml || ! -f k8s-yamls/nginx_svc_patch.yaml ]]; then
+    cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
+    envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
+  fi
   for n in $(seq $SP $(($2 + $EP))); do
     n=$(validate_port $n)
-    exposed_port_list="$exposed_port_list Exposing service $3-$n on $host_address:$1$n${NEWLINE}"
+    local svc_name=$3-$n
+    local svc_port=$1$n
+    echo -e "$exposed_port_list Exposing service $svc_name on $host_address:$svc_port"
+
+    cat <<EOF >>./k8s-yamls/nginx_cm_tcp.yaml
+  $svc_port: "${cluster}/$svc_name:$svc_port"
+EOF
+
     cat <<EOF >>./k8s-yamls/nginx_svc_patch.yaml
-  - name: "$1$n"
-    nodePort: $1$n
-    port: $1$n
+  - name: "$svc_port"
+    nodePort: $svc_port
+    port: $svc_port
     protocol: TCP
 EOF
   done
 
-  kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  kubectl -n ingress-nginx patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
 }
 
 patch_ambassador() {

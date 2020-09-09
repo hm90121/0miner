@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: gen-keys
-          image: 0chainkube/zchain_genkeys:v1.0.15
+          image: 0chainkube/zchain_genkeys:standalone_v2
           imagePullPolicy: Always
           env:
             - name: MINER
@@ -20,16 +20,14 @@ spec:
               value: "$b"
             - name: PUBLIC_ENDPOINT
               value: "${host_address}"
+            - name: PUBLIC_IP
+              value: "${host_ip}"            
             - name: MPORT
               value: "312"
-            - name: ZPORT
-              value: "31081"
             - name: SPORT
               value: "311"
-            - name: ZBOX
-              value: "1"
-            - name: WORKER
-              value: "1"
+            - name: BPORT
+              value: "313"  
             - name: DTYPE
               value: "${dtype}"
           volumeMounts:
@@ -39,10 +37,6 @@ spec:
               name: 0chain-config-pvc
             - mountPath: /blob-keys
               name: blob-config-pvc
-            - mountPath: /zbox-keys
-              name: zbox-config-pvc
-            - mountPath: /worker-keys
-              name: worker-config-pvc
       restartPolicy: Never
       imagePullSecrets:
         - name: regcred
@@ -56,9 +50,3 @@ spec:
         - name: blob-config-pvc
           persistentVolumeClaim:
             claimName: blob-config-pvc
-        - name: zbox-config-pvc
-          persistentVolumeClaim:
-            claimName: zbox-config-pvc
-        - name: worker-config-pvc
-          persistentVolumeClaim:
-            claimName: worker-config-pvc

@@ -182,10 +182,10 @@ if [ $cloud_provider == "on-premise" ]; then
   log_volume_size=1
 fi
 
-host_address=$host_ip
+host_address=$host_name.devnet-0chain.net
 echo $host_address
+echo $host_ip
 block_worker_url="http://${network}.devnet-0chain.net/dns"
-host_address=$(get_host internal)
 
 echo $network
 
@@ -250,8 +250,7 @@ pushd Load_balancer
     pushd Keygen
     mkdir -p k8s-yamls && rm -f k8s-yamls/*
     [ -f ./key-gen.yaml ] && rm ./key-gen.yaml
-    [[ $cloud_provider == "on-premise" ]] && blobber_host_address=$(get_host internal) || blobber_host_address=$(get_host external)
-    host_address=${blobber_host_address} s=${s} m=${m} b=${b} dtype=${dtype} envsubst <key-gen.template >k8s-yamls/key-gen.yaml
+    host_address=$host_address host_ip=$host_ip s=${s} m=${m} b=${b} dtype=${dtype}  envsubst <key-gen.template >k8s-yamls/key-gen.yaml
     pushd Volumes
     for file in $(ls *.yaml -p | grep -v /); do
       rwm_sc=${rwm_sc} envsubst <${file} >../k8s-yamls/${file}
@@ -260,20 +259,25 @@ pushd Load_balancer
     popd
     kubectl create -f k8s-yamls/key-gen.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
     kubectl wait --for=condition=complete jobs/gen-keys -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
-    kubectl create -f magic-block.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
-    kubectl wait --for=condition=complete jobs/magic-block -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
-    blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
+    # kubectl create -f magic-block.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+    # kubectl wait --for=condition=complete jobs/magic-block -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
+    # blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
     popd
-    blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
-  else
-    configure_standalone_dp
-  fi
-
+    # blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
 config_dir="Configmap_enterprise"
 pushd Keygen
-blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
+# blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
 popd
-blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
+# blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
+
+block_worker_url="http://${network}.devnet-0chain.net/dns"
+mkdir -p on-prem/wallet && rm -f on-prem/wallet/*
+
+./Keygen/standalone/keys_file --host_url ${host_address} --port " " --keys_file on-prem/wallet/owner_keys.txt
+    kubectl create configmap owner-keys-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=b0owner_keys.txt=on-prem/wallet/owner_keys.txt -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/owner.yaml
+
+  curl --silent "${block_worker_url}/magic_block" >on-prem/wallet/magicBlock.json
+  kubectl create configmap magic-block-config --kubeconfig ${kubeconfig} --namespace $cluster --from-file=on-prem/wallet/magicBlock.json -o yaml $KUBE_EXTRA_ARGS >k8s-yamls/magic_block.yaml
 
 if [[ $deploy_main == true ]]; then
   if [[ $s =~ ^[0-9]+$ && $s -gt 0 && $s -le 99 ]]; then
