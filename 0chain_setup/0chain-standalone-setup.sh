@@ -263,7 +263,7 @@ pushd Load_balancer
     # kubectl wait --for=condition=complete jobs/magic-block -n ${cluster} --timeout=300s --kubeconfig $kubeconfig
     # blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")
     popd
-    # blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
+    blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} capacity=${capacity} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
 config_dir="Configmap_enterprise"
 pushd Keygen
 # blobber_delegate_ID=$(./blobber_keygen --keys_file "./k8s-yamls/${cluster}_blob_keys.json")

@@ -77,9 +77,6 @@ spec:
           volumeMounts:
             - mountPath: /blobber/config
               name: blobber-config
-            - mountPath: /blobber/keysconfig/magicBlock.json
-              name: magic-block-config
-              subPath: magicBlock.json
             - mountPath: /blobber/keysconfig/wallet.txt
               name: wallet-keys-config
               subPath: wallet.txt
@@ -98,10 +95,6 @@ spec:
       imagePullSecrets:
         - name: regcred
       volumes:
-        - name: magic-block-config
-          configMap:
-            name: magic-block-config
-            defaultMode: 0755
         - name: wallet-keys-config
           configMap:
             name: wallet-keys-config

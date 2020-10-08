@@ -59,9 +59,6 @@ spec:
           volumeMounts:
             - mountPath: /blobber/config
               name: blobber-config
-            - mountPath: /blobber/keysconfig/magicBlock.json
-              name: magic-block-config
-              subPath: magicBlock.json
             - mountPath: /blobber/data
               name: blob-valid-data-pvc-${n}
             - mountPath: /blobber/log

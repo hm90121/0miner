@@ -76,10 +76,7 @@ spec:
               memory: 50Mi
           volumeMounts:
             - mountPath: /blobber/config
-              name: blobber-config
-            - mountPath: /blobber/keysconfig/magicBlock.json
-              name: magic-block-config
-              subPath: magicBlock.json              
+              name: blobber-config     
             - mountPath: /blobber/files
               name: valid-files-pvc-${n}
             - mountPath: /blobber/data
@@ -97,10 +94,6 @@ spec:
       imagePullSecrets:
         - name: regcred
       volumes:
-        - name: magic-block-config
-          configMap:
-            name: magic-block-config
-            defaultMode: 0755
         - name: minio-config
           secret:
             secretName: minio-config
