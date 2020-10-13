@@ -1,93 +1,92 @@
+
 # Getting Started with the 0chain minikube/microK8s On-premise deployment Guide
 
 Clone the latest code from github kubernetes repository in the managed_kubernetes branch
 
 ```bash
-git clone https://github.com/0chain/kubernetes.git
-Git checkout managed_kubernetes
-cd kubernetes
+git clone https://github.com/0chain/0miner.git
+sudo su 
+cd 0miner
 ```
 ## Setup requirement tools
 Requirements for 0chain deployment script
 - bash
-- jq
+- jq - `sudo apt update && sudo apt install jq`
 - curl
-- kubectl
+- kubectl 
+```bash
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/kubectl && kubectl version --client 
+```
 - envsubst (get-text on mac)
-- python3 & pip3
+-  Install python3-pip
+`
+ sudo apt update && sudo apt upgrade && sudo apt install python3-pip
+ pip3 install -U PyYAML
+`
 >Install python requiements with pip3 install -r requirements.txt
-## Setting up haproxy as an external load balancer
-To enable url host for on-prem cluster it require us to use a system based Load balancer that can redirect request from port 80 to nginx port. 
-- First get nginx port using following command
-```bash
--> kubectl get svc -n ingress-nginx ingress-nginx-controller
--> ingress-nginx-controller   LoadBalancer   10.233.23.142   <pending>     31101:31101/TCP,31102:31102/TCP,31103:31103/TCP,31201:31201/TCP,31202:31202/TCP,31203:31203/TCP,31204:31204/TCP,31205:31205/TCP,31206:31206/TCP,31301:31301/TCP,31302:31302/TCP,31303:31303/TCP,31304:31304/TCP,31305:31305/TCP,31306:31306/TCP,31307:31307/TCP,31308:31308/TCP,31309:31309/TCP,31310:31310/TCP,31311:31311/TCP,31312:31312/TCP,80:32687/TCP,443:30921/TCP   2d
+## Setup kubernetes environment
+### Install any of the below local kubernetes providers
+- [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+- [Microk8s](https://ubuntu.com/tutorials/install-a-local-kubernetes-with-microk8s#2-deploying-microk8s)
 
--> kubectl get pods -n ingress-nginx  -o wide
--> NAME                                        READY   STATUS      RESTARTS   AGE    IP              NODE    NOMINATED NODE   READINESS GATES
-ingress-nginx-admission-create-zb7ss        0/1     Completed   0          2d1h   10.233.67.2     node4   <none>           <none>
-ingress-nginx-admission-patch-zmnr6         0/1     Completed   0          2d1h   10.233.69.169   node5   <none>           <none>
-ingress-nginx-controller-84bd7c74bc-x2pl8   1/1     Running     0          2d1h   10.233.67.4     node4   <none>           <none>
+### Setup local  kubernetes providers
+For `automatic setup` we can use local_k8s script in utility folder
+```bash
+cd 0chain_setup/utility
+bash ./local_k8s.sh 
+# Just provide your operating system and environment by answering the prompts after execution
+# Script will automatically setup environment for you
+// In case of minikube  
+bash ./local_k8s.sh {memory} {disk-size}
+# example: bash ./local_k8s.sh 4096 50g
+```
+### For manual setup refer to below guide.
 
-```
-You will get output like above, Identify kubernetes port assocaited with port 80. In this case it is 32687 save it somewhere we will need it later. Then identify the ip of node on which ingress-nginx-controller pod is running, in above case it is node6
- 
-- Then Install haproxy on your node to act as a system level loadbalancer with below command
+**Setup Microk8s on your local machine.**
+
+Enable following microk8s addons before moving to deployment
+> host_ip is the IP you want to expose your microk8s cluster on, the same host_ip entry will be made in our etc/hosts file for mac and linux
+- cilium
+- dns
+- storage
+- metallb
+`microk8s enable metallb {host_ip}-{host_ip} -> 172.17.0.3-172.17.0.3`
+- host-access
+`microk8s enable host-access:ip={host_ip}`
+
+**Setup Minikube on your local machine.**
+
+Enable following minikube addons before moving to deployment
+- metallb
+- ingress-dns
+- storage (If not enabled)
+>Enable metallb with minikube addons enable metallb #Make sure you are using latest version
+### Setup your minikube vm driver.
+Currently following vm-driver has been tested based on opertaing system.
+Operating System | Virtual machine driver
+------------ | -------------
+Linux | KVM (prefered) & Docker
+Windows | Hyperv(prefered) & Virtualbox
+Mac | Hyperkit
+
+### Run your minikube instance with following command
+
 ```bash
--> sudo apt install -y haproxy
+# Create minikube cluster
+minikube start --memory=4096 --disk-size=50g --driver={os-vm-driver} --enable-default-cni --network-plugin=cni
+# Enable metallb if not done previously
+minikube addons enable metallb  
+# Install cilium cni so that service can communicate with each other
+kubectl create -f https://raw.githubusercontent.com/cilium/cilium/1.7.5/install/kubernetes/quick-install.yaml
 ```
-- Setup haproxy config file
-```bash
--> sudo nano /etc/haproxy/haproxy.cfg 
-# Add following snippet to end of config file
-listen two (Network name)
-    bind 0.0.0.0:80
-    mode tcp
-    timeout connect  4000
-    timeout client   180000
-    timeout server   180000
-    server srv1 38.32.112.211:32687 (NodeIP:NodePort)
+Note:
+* If no driver is specified minikube will use default driver present on system.
+* If multple driver are present minikube will use its default driver i.e. docker
+* Currently docker driver on mac is not compataible with 0chain & use it will led to broken inter-service communication
+
+For a minikube cluster with 4gb ram and 2 vcpus, limit the deployment size to 2 miners, 2 sharders & 2 blobbers. If container get stuck at container cerating trying reducing pvc size for all services. You can also try increasing vm size or disabling some of the services like recorder & worker, In case you are only interested in working blockchain.
 
 >If you are using docker vmdriver then 4gb rams is enough but with virtual machine VM-driver like kvm2 or virutalbox try to have atleast 6Gb RAM reserved for minikube.
 
 
-## Common steps or deployment
-### Setup entry in in your system hosts file
-
-- mac `/etc/hosts`
-- ubuntu `/etc/hosts`
-- windows `c:\Windows\System32\Drivers\etc\hosts`
-> Windows users need to have bash and jq installed on their system in order to use the deployment script
-
-Follow this guide for more information: [Host Guide](https://www.webhostface.com/kb/knowledgebase/modify-hosts-file/#:~:text=Modifying%20the%20hosts%20file%20under%20MAC%20OS,navigate%20and%20edit%20the%20file.)
-
-1. Get your local minikube ip on which minikube will expose its services with following command
-```
-Replace nodeIP and nodeport as identified in previous step.
-- Restart HA-proxy service & get its status.
-```bash
--> sudo systemctl restart haproxy
--> sudo systemctl status haproxy
-```
-- Change the node number in 0chain_setup/function.sh to  node on which we want to create deployment
-```python
-  python3 ../update_label.py k8s-yamls/deployment-${n}-${file} 1 '4' #(node number for deployment)
-```
-
-## How to use disk expansion script
-- ssh into node on which disk is attached
-- Use following command to see current disk states
-```bash
-kubectl -n openebs get csp
-kubectl -n openebs get spc
-kubectl -n openebs get bd
-kubectl -n openebs get bdc
-```
-
-- cd to ~/disk-expansion folder on each nodes home directory
-- execute the below disk expansion command
-```
-./expand_openebs_disk.sh  --disk-path /dev/sdb      --disk-type ssd
-                         (Path of the disk to add) (Disk type to add [ssd/hdd])
-```
-Latest changes are present in 0chain_setup/on-prem/disk-expansion folder
+### `Finally,cloud ` Create a 0chain deployment by following the deployment guide.
