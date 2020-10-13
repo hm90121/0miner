@@ -1,27 +1,31 @@
 
-# 0chain Setup in Kubernetes
+## Guide to setup the 0miner on kubernetes cluster
 
-## Guide to setup the standalone kubernetes cluster
+## **Step** **1**. Create the kubernetes cluster
+
+  - [ On-premise/single server](https://github.com/0chain/0miner/blob/development/on-premise/README.md)
 
 
-### Set up the 0chain componets in k8s:
+## Step 2. Set up the 0chain componets in k8s:
 
-Clone the kubernetes repository and change the directory to 0chain_setup and run the below script to setup the 0chain components.
+Clone the kubernetes repository and change the directory to 0chain_setup and run the below script to setup the 0chain components. There are some predefined configs as well in utility/config/ directory make the changes in them if you don't want to create the new json from scratch.
 
 ```bash
-cd 0chain_setup
-
+git clone https://github.com/0chain/0miner.git
+cd 0miner/0chain_setup
 bash 0chain-setup.sh
 ```
-Setup script can take input in 3, each of which have a seperatec command format described below.
+Setup script can take input in 3, each of which have a separate command format described below.
 
 ```
 bash
 -JSON file
   bash 0chain-setup.sh --input-file ./utility/config/oci_input_premium.json
+  
 -Command line arguments # (Argument should appear in same order)
    bash 0chain-setup.sh --cargs test 2 3 6 true true test ../oci-eks/generated/kubeconfig 300 oci oci A 0chainkube latest 3
                                   clustername sharder-count miner-count blobber-count deploy-main deploy-auxiliary host-address kubeconfig-path n2n-delay storage-class cloud-provider dns-record-type registry-image image-tag ceph-instance-count(optional)
+                                  
 -Interactive input
   bash 0chain-setup.sh --input-cli
 ```
@@ -84,52 +88,4 @@ Once the script is completed then check the pods using the kubectl command
 kubectl get pods -n <cluster_name>
 ```
 If the pods are running/completed(jobs will be shown as completed) then check the URL from the browser and make sure the 0chain blockchain is running.
-
-To get host IP use following kubectl command
-```bash
-HOST_ADDRESS=$(kubectl get -n ingress-nginx service ingress-nginx-controller -o 'go-template={{range .status.loadBalancer.ingress}}{{print .ip "\n"}}{{end}}')
-```
-The retrieved url could be use as our `HOST_ADDRESS`. 
-
-> If deployed on a cloud provider like AWS/OCI, we get a public URL as mentioned below depending on our network, as our `HOST_ADDRESS`.
-```bash
-# {hostname}.{hostnetwork}.net
-- {hostname}.testnet-0chain.net
-- {hostname}.devnet-0chain.net
-- {hostname}.0chain.com
-# Incase of OCI premium deployment because we are using 2 loadbalancers we get a seperate url along with above URL
-- blobbers.{hostname}.testnet-0chain.net
-```
-List of all miners and sharders could be directly retrieved from following block-worker URL
-
-```bash
-Worker:
-  http://{hostname}.{hostnetwork}-0chain.net/dns/
-  # URL for miner & sharder list & magic-block details
-  http://{hostname}.{hostnetwork}-0chain.net/dns/network
-  ##example http://three.testnet-0chain.net/dns/network
-For A basic deployment our initial miners, sharders and blobbers list will look like
-miners:
-- http://{HOST_ADDRESS}:31201
-- http://{HOST_ADDRESS}:31202
-- http://{HOST_ADDRESS}:31203
-
-sharders:
-- http://{HOST_ADDRESS}:31101
-- http://{HOST_ADDRESS}:31102
-
-blobbers:
-- http://{HOST_ADDRESS}:31301
-- http://{HOST_ADDRESS}:31302
-- http://{HOST_ADDRESS}:31303
-- http://{HOST_ADDRESS}:31304
-- http://{HOST_ADDRESS}:31305
-- http://{HOST_ADDRESS}:31306
-
-explorer:
-- http://{HOST_ADDRESS}
-
-0proxy:
-- http://{HOST_ADDRESS}/proxy/
-```
 
