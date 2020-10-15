@@ -1,0 +1,37 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: kibana
+  namespace: elastic-system
+spec:
+  version: 7.8.0
+  count: 1
+  elasticsearchRef:
+    name: "elastic-cluster"
+  http:
+   service:
+     spec:
+       type: NodePort
+  # this shows how to customize the Kibana pod
+  # with labels and resource limits
+  podTemplate:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      nodeSelector:
+        xnum: elastic-node
+        environment: one
+      containers:
+      - name: kibana
+        resources:
+          limits:
+            memory: 1Gi
+            cpu: 0.5 
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true 
+        #subjectAltNames:
+        #- ip: 192.168.0.1
+        #- dns: example.com

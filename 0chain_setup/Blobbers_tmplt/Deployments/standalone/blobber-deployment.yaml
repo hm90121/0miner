@@ -91,6 +91,8 @@ spec:
               subPath: minio_config.txt
             - mountPath: /blobber/sql
               name: postgres-sql-pvc
+            - mountPath: /blobber/data/tmp
+              name: blob-tmp-pvc-${n}
       restartPolicy: Always
       imagePullSecrets:
         - name: regcred
@@ -120,3 +122,6 @@ spec:
           configMap:
             name: blobber-config
             defaultMode: 0755
+        - name: blob-tmp-pvc-${n}
+          persistentVolumeClaim:
+            claimName: blob-tmp-pvc-${n}

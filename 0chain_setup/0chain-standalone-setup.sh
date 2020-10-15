@@ -182,7 +182,7 @@ if [ $cloud_provider == "on-premise" ]; then
   log_volume_size=1
 fi
 
-host_address=$host_name.devnet-0chain.net
+host_address=$host_name
 echo $host_address
 echo $host_ip
 block_worker_url="http://${network}.devnet-0chain.net/dns"
@@ -245,6 +245,9 @@ pushd Load_balancer
     popd
     popd
 
+  # deploy_elk_stack
+  # deploy_grafana
+  # deploy_rancher
 
     echo -e "\e[93m =================== Generating 0chain keys and config file =================== \e[39m" && append_logs "Generating app specific configuration"
     pushd Keygen

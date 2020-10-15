@@ -519,6 +519,9 @@ user_input_deployment() {
   cloud_provider=$(jq -r .cloud_provider $json_source)
   record_type=$(jq -r .record_type $json_source)
   dtype=$(jq -r .deployment_type $json_source)
+  elk=$(jq -r .monitoring.elk $json_source)
+  rancher=$(jq -r .monitoring.rancher $json_source)
+  grafana=$(jq -r .monitoring.grafana $json_source)
   on_premise=$(jq -r .on_premise $json_source)
   if [[ ! -z "$on_premise" || $on_premise != null ]]; then
     on_prem_env=$(jq -r .on_premise.environment $json_source)
@@ -673,17 +676,75 @@ configure_standalone_dp() {
 }
 
 deploy_elk_stack() {
+  if [[ $elk == true ]]; then 
   echo -e "\e[93m Setting up ELK stack \e[39m" && append_logs "Setting up elk stack for logging and metric data"
   export CLUSTER=$cluster
   pushd Elk
-  for file in $(ls ./); do
-    if [[ $file == *.yaml ]]; then
-      envsubst '${ELK_IP} ${ELK_PORT} ${ELK_UID} ${ELK_PASS} ${CLUSTER}' <$file >./k8s-yamls/$file
-      kubectl create -f ./k8s-yamls/$file --kubeconfig ${kubeconfig}
-      echo -e "Deploying $file component for ELK stack"
-    fi
-  done
+  kubectl apply -f https://download.elastic.co/downloads/eck/1.1.2/all-in-one.yaml
+  kubectl apply -f elasticsearch.yaml
+  kubectl apply -f kibana.yaml
+  sleep 30
+  PASSWORD=$(kubectl get secret elastic-cluster-es-elastic-user -n elastic-system -o go-template='{{.data.elastic | base64decode}}')
+  echo ELASTICSEARCH USER=elastic
+  echo ELASTICSEARCH PASSWORD $PASSWORD
+
+  curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/filebeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
+  curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/metricbeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
   popd
+  kubectl create -f Load_balancer/nginx/k8s-yamls/kibana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+  else
+    echo "skipping elk"
+  fi
+}
+
+deploy_rancher() {
+  if [[ $rancher == true ]]; then 
+  echo -e "\e[93m Setting up rancher \e[39m" && append_logs "Setting up rancher dashboard"
+  export CLUSTER=$cluster
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest  
+  kubectl create namespace cattle-system
+  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
+  kubectl create namespace cert-manager
+  helm repo add jetstack https://charts.jetstack.io
+  helm repo update
+  helm upgrade --install \
+    cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --version v0.15.0
+  sleep 30 
+  
+  helm upgrade --install rancher rancher-latest/rancher \
+    --namespace cattle-system \
+    --set hostname=rancher.${host_name}
+    --set ingress.tls.source="letsEncrypt" \
+    --set letsEncrypt.email="consult@squareops.com" \
+    --set letsEncrypt.environment="prod"
+  else
+    echo "skipping rancher"
+  fi
+}
+
+deploy_grafana() {
+  if [[ $grafana == true ]]; then 
+  echo -e "\e[93m Setting up prometheus and grafana \e[39m" && append_logs "Setting up elk stack for logging and metric data"
+  export CLUSTER=$cluster
+  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+
+  kubectl create namespace monitoring
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com
+  helm repo update
+  helm install prometheus-operator-1 stable/prometheus-operator --set prometheusOperator.createCustomResource=false --namespace monitoring
+
+  echo username - admin 
+  echo password - prom-operator
+  kubectl create -f Load_balancer/nginx/k8s-yamls/grafana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+  else
+    echo "skipping grafana"
+  fi
 }
 
 # echo  "--------------------------------------------------------------------------------------------------------------------------------------------------------------------"
