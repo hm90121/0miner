@@ -6,6 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx-ingress-nginx"
     ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
   - host: kibana.${host_address}
@@ -15,3 +16,7 @@ spec:
         backend:
           serviceName: kibana-kb-http
           servicePort: 5601
+  tls:
+  - hosts:
+    - kibana.${host_address}
+    secretName: kibana-kubernetes-tls          

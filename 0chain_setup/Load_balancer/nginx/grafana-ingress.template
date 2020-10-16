@@ -7,6 +7,7 @@ metadata:
     kubernetes.io/ingress.class: "nginx-ingress-nginx"
     nginx.org/ssl-services: "grafana"
     ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
   - host: grafana.${host_address}
@@ -14,5 +15,9 @@ spec:
       paths:
       - path: /
         backend:
-          serviceName: prometheus-operator-1-grafana
+          serviceName: kube-prometheus-stack-grafana
           servicePort: 80
+  tls:
+  - hosts:
+    - grafana.${host_address}
+    secretName: grafana-kubernetes-tls          

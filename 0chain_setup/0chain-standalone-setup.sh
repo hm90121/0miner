@@ -225,16 +225,14 @@ pushd Load_balancer
       popd
     fi
 
-    append_logs "Creating DNS Mapping"
-    create_dns_mapping ingress-nginx
-  
-    append_logs "Configuring Loadbalancer"
+domain=$host_name
+resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+
+[[ -z "$resolvedIP" ]] && echo "$domain" lookup failure || echo "$domain" resolved to "$resolvedIP"
+
+  if [[ $resolvedIP ]]; then
+    echo "doing host mapping"
     pushd nginx
-    patch_ngnix_lb 311 $s sharder
-    patch_ngnix_lb 312 $m miner
-    patch_ngnix_lb 313 $b blobber
-    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    # kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission-${cluster} --kubeconfig ${kubeconfig}
     # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress.template >./k8s-yamls/nginx-path-ingress.yaml
     # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress-rec.template >./k8s-yamls/nginx-path-ingress-rec.yaml
     cluster=${cluster} host_address=${host_address} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
@@ -242,6 +240,20 @@ pushd Load_balancer
     # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress-rec.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+  fi
+
+  if [[ -z $domain || -z $resolvedIP ]]; then
+    echo "doing port mapping"
+    pushd nginx
+    create_dns_mapping ingress-nginx
+    append_logs "Configuring Loadbalancer"
+    patch_ngnix_lb 311 $s sharder
+    patch_ngnix_lb 312 $m miner
+    patch_ngnix_lb 313 $b blobber
+    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+  fi
+    # kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission-${cluster} --kubeconfig ${kubeconfig}
     popd
     popd
 

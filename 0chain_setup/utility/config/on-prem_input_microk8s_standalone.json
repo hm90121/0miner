@@ -3,7 +3,7 @@
   "cluster_name": "test",
   "sharder_count": "0",
   "miner_count": "0",
-  "blobber_count": "0",
+  "blobber_count": "1",
   "deploy_main": true,
   "deploy_auxiliary": true,
   "host_address": "test.devnet-0chain.net",
