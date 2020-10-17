@@ -8,10 +8,10 @@ spec:
   count: 1
   elasticsearchRef:
     name: "elastic-cluster"
-  http:
-   service:
-     spec:
-       type: NodePort
+  #http:
+  #  service:
+  #    spec:
+  #      type: LoadBalancer
   # this shows how to customize the Kibana pod
   # with labels and resource limits
   podTemplate:
@@ -19,9 +19,9 @@ spec:
       labels:
         app: kibana
     spec:
-      nodeSelector:
-        xnum: elastic-node
-        environment: one
+      # nodeSelector:
+      #   xnum: elastic-node
+      #   environment: one
       containers:
       - name: kibana
         resources:

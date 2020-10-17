@@ -10,7 +10,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
-  - host: grafana.${host_address}
+  - host: ${host_address}
     http:
       paths:
       - path: /
@@ -19,5 +19,5 @@ spec:
           servicePort: 80
   tls:
   - hosts:
-    - grafana.${host_address}
+    - ${host_address}
     secretName: grafana-kubernetes-tls          

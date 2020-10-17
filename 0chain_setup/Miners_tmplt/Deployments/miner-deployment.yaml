@@ -77,6 +77,14 @@ spec:
               name: miner-data-pvc-${n}
             - mountPath: /0chain/log
               name: miner-log-pvc-${n}
+        - name: filebeat-sidecar
+          image: docker.elastic.co/beats/filebeat:7.8.0
+          volumeMounts:
+          - name: miner-log-pvc-${n}
+            mountPath: /0chain/log
+          - name: filebeat-config
+            mountPath: /usr/share/filebeat/filebeat.yml
+            subPath: filebeat.yml
       imagePullSecrets:
         - name: regcred
       restartPolicy: Always
@@ -114,3 +122,7 @@ spec:
         - name: sm-config-pvc
           persistentVolumeClaim:
             claimName: sm-config-pvc
+        - name: filebeat-config
+          configMap:
+            name: filebeat-config
+            defaultMode: 0755

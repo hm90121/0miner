@@ -238,9 +238,17 @@ cluster_reset() {
   fi
   popd
 
-  kubectl delete -f ./Elk/ --kubeconfig ${kubeconfig}
+  helm ls -A --all-namespaces | awk 'NR > 1 { print  "-n "$2, $1}' | xargs -L1 helm delete
+  kubectl delete all --all -n monitoring
+  kubectl delete all --all -n cattle-system
+  kubectl delete all --all -n elastic-system
+  kubectl delete ns monitoring
+  kubectl delete ns cattle-system
+  kubectl delete ns elastic-system
+  kubectl delete all --all -n ${cluster}
   kubectl delete ns ${cluster} --kubeconfig ${kubeconfig}
-  # kubectl delete sc csi-cephfs --kubeconfig $kubeconfig
+  kubectl delete all --all -n cert-manager
+  kubectl delete ns cert-manager
 }
 
 validate_port() {
@@ -522,6 +530,9 @@ user_input_deployment() {
   elk=$(jq -r .monitoring.elk $json_source)
   rancher=$(jq -r .monitoring.rancher $json_source)
   grafana=$(jq -r .monitoring.grafana $json_source)
+  kibana_domain=$(jq -r .monitoring.elk_address $json_source)
+  rancher_domain=$(jq -r .monitoring.rancher_address $json_source)
+  grafana_domain=$(jq -r .monitoring.grafana_address $json_source)
   on_premise=$(jq -r .on_premise $json_source)
   if [[ ! -z "$on_premise" || $on_premise != null ]]; then
     on_prem_env=$(jq -r .on_premise.environment $json_source)
@@ -683,67 +694,90 @@ deploy_elk_stack() {
   kubectl apply -f https://download.elastic.co/downloads/eck/1.1.2/all-in-one.yaml
   kubectl apply -f elasticsearch.yaml
   kubectl apply -f kibana.yaml
-  sleep 30
+  sleep 35
   PASSWORD=$(kubectl get secret elastic-cluster-es-elastic-user -n elastic-system -o go-template='{{.data.elastic | base64decode}}')
   echo ELASTICSEARCH USER=elastic
   echo ELASTICSEARCH PASSWORD $PASSWORD
 
   curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/filebeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
   curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/metricbeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
+  PASSWORD=$PASSWORD CLUSTER=$cluster envsubst <filebeat-sidecar-configmap.template >filebeat-sidecar-configmap.yaml
+  kubectl apply -f filebeat-sidecar-configmap.yaml
   popd
-  kubectl create -f Load_balancer/nginx/k8s-yamls/kibana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
   else
     echo "skipping elk"
+  fi
+
+resolvedIP=$(nslookup "$kibana_domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+[[ -z "$resolvedIP" ]] && echo "$kibana_domain" lookup failure || echo "$kibana_domain" resolved to "$resolvedIP"
+
+  if [[ $resolvedIP ]]; then
+    kubectl create -f Load_balancer/nginx/k8s-yamls/kibana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    echo -e "\e[32m kibana deployed at following url $kibana_domain \e[39m"
+  fi
+   
+  if [[ -z $kibana_domain || -z $resolvedIP ]]; then
+    kubectl -n elastic-system patch svc kibana-kb-http --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":30002}]'
+    echo -e "\e[32m kibana deployed at following url $host_ip:30002 \e[39m"
   fi
 }
 
 deploy_rancher() {
-  if [[ $rancher == true ]]; then 
+  if [[ $rancher == true ]]; then
   echo -e "\e[93m Setting up rancher \e[39m" && append_logs "Setting up rancher dashboard"
   export CLUSTER=$cluster
-  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest  
+  pushd rancher
+  helm repo add rancher-stable https://releases.rancher.com/server-charts/stable  
   kubectl create namespace cattle-system
-  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
-  kubectl create namespace cert-manager
-  helm repo add jetstack https://charts.jetstack.io
-  helm repo update
-  helm upgrade --install \
-    cert-manager jetstack/cert-manager \
-    --namespace cert-manager \
-    --version v0.15.0
-  sleep 30 
   
-  helm upgrade --install rancher rancher-latest/rancher \
+  helm upgrade --install rancher rancher-stable/rancher --version 2.4.8 \
     --namespace cattle-system \
-    --set hostname=rancher.${host_name}
+    --set hostname=rancher.${host_address} \
     --set ingress.tls.source="letsEncrypt" \
     --set letsEncrypt.email="consult@squareops.com" \
     --set letsEncrypt.environment="prod"
+  popd
+  kubectl annotate ingress rancher -n cattle-system kubernetes.io/ingress.class=nginx-ingress-nginx
+  echo -e "\e[32m Rancher deployed at following url rancher.${host_address} \e[39m "
   else
     echo "skipping rancher"
   fi
 }
 
 deploy_grafana() {
-  if [[ $grafana == true ]]; then 
+  if [[ $grafana == true ]]; then
   echo -e "\e[93m Setting up prometheus and grafana \e[39m" && append_logs "Setting up elk stack for logging and metric data"
   export CLUSTER=$cluster
-  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
-  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
-  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
-  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
-  kubectl apply -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
+  helm repo add prometheus-com https://prometheus-community.github.io/helm-charts
+  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  helm repo update
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml
+  kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 
   kubectl create namespace monitoring
-  helm repo add stable https://kubernetes-charts.storage.googleapis.com
-  helm repo update
-  helm install prometheus-operator-1 stable/prometheus-operator --set prometheusOperator.createCustomResource=false --namespace monitoring
+  helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --version 9.4.4 --set prometheusOperator.createCustomResource=false --namespace monitoring
 
   echo username - admin 
   echo password - prom-operator
-  kubectl create -f Load_balancer/nginx/k8s-yamls/grafana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
   else
     echo "skipping grafana"
+  fi
+  
+resolvedIP=$(nslookup "$grafana_domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+[[ -z "$resolvedIP" ]] && echo "$grafana_domain" lookup failure || echo "$grafana_domain" resolved to "$resolvedIP"
+
+  if [[ $resolvedIP ]]; then
+    kubectl create -f Load_balancer/nginx/k8s-yamls/grafana-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    echo -e "\e[32m Grafana deployed at following url $grafana_domain \e[39m"
+  fi
+   
+  if [[ -z $grafana_domain || -z $resolvedIP ]]; then
+    kubectl -n monitoring patch svc kube-prometheus-stack-grafana --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":30001}]'
+    echo -e "\e[32m Grafana deployed at following url $host_ip:30001 \e[39m"
   fi
 }
 

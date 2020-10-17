@@ -9,7 +9,7 @@ metadata:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   rules:
-  - host: kibana.${host_address}
+  - host: ${host_address}
     http:
       paths:
       - path: /
@@ -18,5 +18,5 @@ spec:
           servicePort: 5601
   tls:
   - hosts:
-    - kibana.${host_address}
+    - ${host_address}
     secretName: kibana-kubernetes-tls          

@@ -1,1 +1,16 @@
-delay:
+Delay:
+- from: miner-2
+  to: miner-3
+  time: 0 
+
+- from: miner-2
+  to: miner-1
+  time: 0 
+
+- from: miner-2
+  to: sharder-2
+  time: 0 
+
+- from: miner-2
+  to: sharder-1
+  time: 0 

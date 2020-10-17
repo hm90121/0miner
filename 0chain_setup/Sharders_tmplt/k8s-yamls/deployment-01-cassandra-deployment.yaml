@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cassandra-01
+    tier: prod
+  name: cassandra-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cassandra-01
+      tier: prod
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cassandra-01
+        tier: prod
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: instance
+                operator: In
+                values:
+                - node-1
+            weight: 100
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: instance
+                  operator: In
+                  values:
+                  - node-1
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: instance
+                  operator: In
+                  values:
+                  - node-none
+                  - node-none
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      containers:
+      - env:
+        - name: MAX_HEAP_SIZE
+          value: 512M
+        - name: HEAP_NEWSIZE
+          value: 100M
+        image: cassandra:3.11.4
+        name: cassandra-01
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1.5Gi
+          requests:
+            cpu: 50m
+            memory: 500Mi
+        volumeMounts:
+        - mountPath: /var/lib/cassandra/data
+          name: sharder-data-pvc-01
+          subPath: cassandra
+      imagePullSecrets:
+      - name: regcred
+      restartPolicy: Always
+      volumes:
+      - name: sharder-data-pvc-01
+        persistentVolumeClaim:
+          claimName: sharder-data-pvc-01

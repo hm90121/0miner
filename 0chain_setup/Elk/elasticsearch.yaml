@@ -20,9 +20,9 @@ spec:
       node.store.allow_mmap: false   
     podTemplate:
       spec:
-        nodeSelector:
-          xnum: elastic-node
-          environment: one
+        # nodeSelector:
+        #   xnum: elastic-node
+        #   environment: one
         initContainers:
         - name: sysctl
           securityContext:
@@ -49,7 +49,7 @@ spec:
         resources:
           requests:
             storage: 30Gi
-        storageClassName: gp2
+        storageClassName: microk8s-hostpath
   - name: data
     count: 1
     config:
@@ -60,9 +60,9 @@ spec:
       node.store.allow_mmap: false
     podTemplate:
       spec:
-        nodeSelector:
-          xnum: elastic-node
-          environment: one
+      #   nodeSelector:
+      #     xnum: elastic-node
+      #     environment: one
         initContainers:
         - name: sysctl
           securityContext:
@@ -89,4 +89,4 @@ spec:
         resources:
           requests:
             storage: 30Gi
-        storageClassName: gp2
+        storageClassName: microk8s-hostpath

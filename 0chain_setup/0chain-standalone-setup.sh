@@ -231,22 +231,28 @@ resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matche
 [[ -z "$resolvedIP" ]] && echo "$domain" lookup failure || echo "$domain" resolved to "$resolvedIP"
 
   if [[ $resolvedIP ]]; then
-    echo "doing host mapping"
+    echo "configuring host mapping"
+    create_dns_mapping ingress-nginx
+    append_logs "Configuring Loadbalancer"
     pushd nginx
+    patch_ngnix_lb 311 $s sharder
+    patch_ngnix_lb 312 $m miner
+    patch_ngnix_lb 313 $b blobber
+    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress.template >./k8s-yamls/nginx-path-ingress.yaml
     # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress-rec.template >./k8s-yamls/nginx-path-ingress-rec.yaml
-    cluster=${cluster} host_address=${host_address} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
-    cluster=${cluster} host_address=${host_address} envsubst <kibana-ingress.template >./k8s-yamls/kibana-ingress.yaml
+    cluster=${cluster} host_address=${grafana_domain} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
+    cluster=${cluster} host_address=${kibana_domain} envsubst <kibana-ingress.template >./k8s-yamls/kibana-ingress.yaml
     # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress-rec.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
   fi
 
   if [[ -z $domain || -z $resolvedIP ]]; then
-    echo "doing port mapping"
-    pushd nginx
+    echo "configuring port mapping"
     create_dns_mapping ingress-nginx
     append_logs "Configuring Loadbalancer"
+    pushd nginx
     patch_ngnix_lb 311 $s sharder
     patch_ngnix_lb 312 $m miner
     patch_ngnix_lb 313 $b blobber
@@ -257,9 +263,19 @@ resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matche
     popd
     popd
 
-  # deploy_elk_stack
-  # deploy_grafana
-  # deploy_rancher
+  kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
+  kubectl create namespace cert-manager
+  helm repo update
+  helm upgrade --install \
+    cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --version v0.15.0
+  sleep 30 
+  kubectl create -f Load_balancer/nginx/cluster-issuer.yaml
+
+  deploy_elk_stack
+  deploy_grafana
+  deploy_rancher
 
     echo -e "\e[93m =================== Generating 0chain keys and config file =================== \e[39m" && append_logs "Generating app specific configuration"
     pushd Keygen
