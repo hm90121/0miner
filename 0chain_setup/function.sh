@@ -732,7 +732,7 @@ deploy_rancher() {
   
   helm upgrade --install rancher rancher-stable/rancher --version 2.4.8 \
     --namespace cattle-system \
-    --set hostname=rancher.${host_address} \
+    --set hostname=${rancher_domain} \
     --set ingress.tls.source="letsEncrypt" \
     --set letsEncrypt.email="consult@squareops.com" \
     --set letsEncrypt.environment="prod"
