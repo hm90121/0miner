@@ -238,6 +238,7 @@ resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matche
     patch_ngnix_lb 311 $s sharder
     patch_ngnix_lb 312 $m miner
     patch_ngnix_lb 313 $b blobber
+    patch_ngnix_lb 314 $b validator
     kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
     # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress.template >./k8s-yamls/nginx-path-ingress.yaml

@@ -37,7 +37,7 @@ spec:
             - --port
             - "314${n}"
             - --hostname
-            - validator-${n}
+            - ${host_address}
             - --deployment_mode
             - "0"
             - --keys_file
