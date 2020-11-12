@@ -1,91 +1,72 @@
 
 ## Guide to setup the 0miner on kubernetes cluster
 
-## **Step** **1**. Create the kubernetes cluster
+## Step 1. Install and setup MicroK8s on Linux
+```bash
+sudo snap install microk8s --classic --channel=1.17/stable
+```
+#### Check the status while Kubernetes starts
+```bash
+microk8s status --wait-ready
+export PATH=$PATH:/snap/bin
+```
+### Setup required tools
 
-  - [ On-premise/single server](https://github.com/0chain/0miner/blob/development/on-premise/README.md)
+- Jq
+ ```bash
+sudo apt update && sudo apt install jq
+```
+- Kubectl
+ ```bash
+curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl 
 
+chmod +x ./kubectl 
+sudo mv ./kubectl /usr/local/bin/kubectl 
+kubectl version --client
+```
+
+- python3 & pip3  
+```bash
+sudo apt update && sudo apt install python3-pip
+pip3 install -U PyYAML
+```
+
+- Helm
+```bash
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+```
+
+### Fetch microk8s kubeconfig to access it using kubectl
+```bash
+sudo su
+mkdir ~/.kube
+microk8s config > ~/.kube/config
+kubectl get po -A
+```
 
 ## Step 2. Set up the 0chain componets in k8s:
 
-Clone the kubernetes repository and change the directory to 0chain_setup and run the below script to setup the 0chain components. There are some predefined configs as well in utility/config/ directory make the changes in them if you don't want to create the new json from scratch.
+Clone the kubernetes repository and change the directory to 0chain_setup and run the below commands to setup the 0chain components. There are some predefined configs as well in utility/config/ directory make the changes in them if you don't want to create the new json from scratch.
 
 ```bash
 git clone https://github.com/0chain/0miner.git
 cd 0miner/0chain_setup
-bash 0chain-setup.sh
+bash utility/local_k8s.sh 
+pip3 install -r utility/requirements.txt
 ```
-Setup script can take input in 3, each of which have a separate command format described below.
+Provide the required inputs after that and you are all done for the microk8s part. 
 
-```
-bash
--JSON file
-  bash 0chain-setup.sh --input-file ./utility/config/oci_input_premium.json
-  
--Command line arguments # (Argument should appear in same order)
-   bash 0chain-setup.sh --cargs test 2 3 6 true true test ../oci-eks/generated/kubeconfig 300 oci oci A 0chainkube latest 3
-                                  clustername sharder-count miner-count blobber-count deploy-main deploy-auxiliary host-address kubeconfig-path n2n-delay storage-class cloud-provider dns-record-type registry-image image-tag ceph-instance-count(optional)
-                                  
--Interactive input
-  bash 0chain-setup.sh --input-cli
-```
-#### Create a config file like input.json inside 0chain_setup
+Note: Microk8s setup does not include dns pointing. You have to make dns entries in etc/hosts file or Route53 to access it.
 
-
-*For standalone deployment (microk8s)*
-```
-#=============================
-{
-  "cloud_provider":"on-premise"
-  "cluster_name": "test", // Namespace in which all your resources will be created
-  "sharder_count": "1",
-  "miner_count": "0",
-  "blobber_count": "0",
-  "deploy_main": true, (optional)
-  "deploy_auxiliary": true, (optional)
-  "host_address": "test", // Host url for your public IP 
-  "kubeconfig_path": "", // path to your kubeconfig, keep it empty to use system configured kubeconfig
-  "n2n_delay": 50,  // Delay between node to slow down block creation
-  "fs_type": "microk8s-hostpath", // valid file system type (On-premise) [standard/ microk8s-hostpath/ openebs-cstore-sc]
-  "repo_type": "0chaintest",  // Repository to use 0chainkube or 0chaintest
-  "image_tag": "v1.0.15" // 0chain image version to be used 
-  "record_type": "A", (optional) // Dns record type supported by cloud provider (AWS) [CNAME] || (OCI) [A]
-  "deployment_type": "PRIVATE", // Use of deployment "PUBLIC" or "PRIVATE"
-  "on_premise": { // (optional) only for local kubernetes deployment
-    "environment": "microk8s", // Kubernetes environment to bes used (Minikube) "minikube" || (Microk8s) "microk8s"
-    "host_ip": "216.218.228.197" //  In case of microk8s provide your local/external IP 
-  },
-  "standalone": {
-    "public_key": "", // Your wallet public key, keep it empty if you want to generate a wallet
-    "private_key": "", // Your wallet private key, keep it empty if you want to generate a wallet
-    "network": "three", // public Network you like to connect to one or three
-    "blobber_delegate_ID": "1d63fc2335bd8d9dcae3ce814299233083647cfd1d8e9a4ab3a4d06f2f99699b", // (blobber only) provide your blobber staking ID
-    "read_price": "0.1", // (blobber only) read price for you blobber
-    "write_price": "0.1", // (blobber only) write price for you blobber
-    "capacity": "1073741824" // (blobber only) capacity for you blobber
-  }
-}
-
-######### Avaliable capacity #########
-#  500 MB - 536870912
-#    1 GB - 1073741824
-#    2 GB - 2147483648
-#    3 GB - 3221225472
-#  100 GB - 107374182400
-#########  ################ #########
-#=============================
-```
-Few things to be noted:
->By default the script will use the ~/.kube/config path. If our kubconfig file is not at the default location then we need to mention the complete path of our kubeconfig.
-
-Expected results:
-
-* Once, script is executed with required parameters, it will create the corresponding 0chain components (Sharder, Miner, Blobber, Validator, 0proxy, explorer, worker, recorder) in the kubernetes cluster. 
-* This will bring up all the required 0chain components in the kubernetes environment.
-
-Once the script is completed then check the pods using the kubectl command
+#### At last execute the setup script using
 ```bash
-kubectl get pods -n <cluster_name>
+bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json
 ```
-If the pods are running/completed(jobs will be shown as completed) then check the URL from the browser and make sure the 0chain blockchain is running.
+
+
+
+Reset command:
+```bash
+bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json --reset true
+```
 

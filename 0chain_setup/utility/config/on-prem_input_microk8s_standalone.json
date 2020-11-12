@@ -1,36 +1,36 @@
 {
   "cloud_provider": "on-premise",
   "cluster_name": "test",
-  "sharder_count": "1",
-  "miner_count": "1",
-  "blobber_count": "1",
+  "sharder_count": "2",
+  "miner_count": "2",
+  "blobber_count": "2",
   "deploy_main": true,
   "deploy_auxiliary": true,
   "host_address": "test.devnet-0chain.net",
-  "host_ip": "216.218.228.197",
+  "host_ip": "18.217.219.7",
   "kubeconfig_path": "",
   "n2n_delay": "",
   "fs_type": "microk8s-hostpath",
   "repo_type": "0chaintest",
   "image_tag": "latest",
   "record_type": "A",
-  "deployment_type": "PRIVATE",
+  "deployment_type": "public",
   "monitoring": {
     "elk": "true",
-    "elk_address": "kibana.test.devnet-0chain.net",
+    "elk_address": "",
     "rancher": "false",
     "rancher_address": "rancher.test.devnet-0chain.net",
-    "grafana": "true",
-    "grafana_address": "grafana.test.devnet-0chain.net"
+    "grafana": "false",
+    "grafana_address": ""
   },
   "on_premise": {
     "environment": "microk8s",
-    "host_ip": "216.218.228.197"
+    "host_ip": "18.217.219.7"
   },
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network": "two",
+    "network": "three",
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",

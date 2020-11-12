@@ -24,8 +24,8 @@ data:
       txn_generation:
         wallets: 50
         max_transactions: 0
-        max_txn_fee: 10000
-        min_txn_fee: 0
+        max_txn_fee: 0.01
+        min_txn_fee: 0.01
         max_txn_value: 10000000000
         min_txn_value: 100
       faucet:
@@ -48,8 +48,7 @@ data:
         min_block_size: 1
         max_block_size: 10
         max_byte_size: 1638400
-        generators: 3
-        #replicators: 3
+        generators: 2
         replicators: 0
         generation:
           timeout: 15
@@ -58,7 +57,7 @@ data:
           max_wait_time: 180 # milliseconds
           wait_mode: static # static or dynamic
         consensus:
-          threshold_by_count: 60 # percentage
+          threshold_by_count: 66 # percentage
           threshold_by_stake: 0 # percent
         sharding:
           min_active_sharders: 25 # percentage
@@ -100,14 +99,19 @@ data:
         proximity_scan:
           enabled: true
           settle_secs: 30
-          window: 0 #number of blocks
+          window: 100 #number of blocks
           repeat_interval_mins: 1 #minutes
           report_status_mins: 1 #minutes
           batch_size: 50
-
+      lfb_ticket:
+        rebroadcast_timeout: '15s'  #
+        ahead: 5                    # should be >= 5
+        fb_fetching_lifetime: '10s' #
+      async_blocks_fetching:
+        max_simultaneous_from_miners: 100
+        max_simultaneous_from_sharders: 30
     network:
       magic_block_file: config/magicBlock.json
-      block_worker_url: 
       relay_time: 200 # milliseconds
       max_concurrent_requests: 40
       timeout:
@@ -115,9 +119,9 @@ data:
         large_message: 3000 # milliseconds
       large_message_th_size: 5120 # anything greater than this size in bytes
       user_handlers:
-        rate_limit: 10 # 10 per second
+        rate_limit: 100000000 # 100 per second
       n2n_handlers:
-        rate_limit: 1000 # 1000 per second
+        rate_limit: 10000000000 # 10000 per second
 
     # delegate wallet is wallet that used to configure node in Miner SC; if its
     # empty, then node ID used
@@ -128,22 +132,22 @@ data:
     number_of_delegates: 10   # max number of delegate pools
     # min stake pool amount allowed by node; should not conflict with
     # SC min_stake 
-    min_stake: 1.0    # tokens
+    min_stake: 0.0    # tokens
     # max stake pool amount allowed by node; should not conflict with
     # SC max_stake 
     max_stake: 100.0  # tokens
 
     minio:
-      enabled: true # Enable or disable minio backup, Do not enable with deep scan ON
-      worker_frequency: 3600 # In Seconds, The frequency at which the worker should look for files, Ex: 3600 means it will run every 3600 seconds
-      num_workers: 5 # Number of workers to run in parallel, Just to make execution faster we can have mutiple workers running simultaneously
+      enabled: false # Enable or disable minio backup, Do not enable with deep scan ON
+      worker_frequency: 300 # In Seconds, The frequency at which the worker should look for files, Ex: 3600 means it will run every 3600 seconds
+      num_workers: 40 # Number of workers to run in parallel, Just to make execution faster we can have mutiple workers running simultaneously
       use_ssl: false # Use SSL for connection or not
-      old_block_round_range: 700000 # How old the block should be to be considered for moving to cloud
+      old_block_round_range: 200 # How old the block should be to be considered for moving to cloud
       delete_local_copy: true # Delete local copy of block once it's moved to cloud
 
     cassandra:
       connection:
-        delay: 3 # in seconds
+        delay: 10 # in seconds
         retries: 10
 
     # integration tests related configurations

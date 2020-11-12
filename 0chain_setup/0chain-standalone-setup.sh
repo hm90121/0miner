@@ -266,6 +266,7 @@ resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matche
 
   kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
   kubectl create namespace cert-manager
+  helm repo add jetstack https://charts.jetstack.io
   helm repo update
   helm upgrade --install \
     cert-manager jetstack/cert-manager \

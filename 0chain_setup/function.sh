@@ -759,7 +759,7 @@ deploy_grafana() {
   kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 
   kubectl create namespace monitoring
-  helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack --version 9.4.4 --set prometheusOperator.createCustomResource=false --namespace monitoring
+  helm upgrade --install kube-prometheus-stack prometheus-com/kube-prometheus-stack --version 9.4.4 --set prometheusOperator.createCustomResource=false --namespace monitoring
 
   echo username - admin 
   echo password - prom-operator
