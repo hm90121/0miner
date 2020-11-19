@@ -1,9 +1,9 @@
 {
   "cloud_provider": "on-premise",
   "cluster_name": "test",
-  "sharder_count": "2",
-  "miner_count": "2",
-  "blobber_count": "2",
+  "sharder_count": "1",
+  "miner_count": "1",
+  "blobber_count": "1",
   "deploy_main": true,
   "deploy_auxiliary": true,
   "host_address": "test.devnet-0chain.net",
