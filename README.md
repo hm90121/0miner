@@ -118,7 +118,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
 
 To verify and validate the deployment visit `http://<network>.devnet-0chain.net:31101/_diagnostics`
 
-Reset command:
+#### Reset command:
 ```bash
 bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json --reset true
 ```
