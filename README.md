@@ -10,6 +10,7 @@
 ## Step 1. Install and setup MicroK8s on Linux
 ```bash
 sudo snap install microk8s --classic --channel=1.17/stable
+sudo snap start microk8s
 ```
 #### Check the status while Kubernetes starts
 ```bash
