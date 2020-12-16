@@ -737,7 +737,7 @@ deploy_rancher() {
     --set letsEncrypt.email="consult@squareops.com" \
     --set letsEncrypt.environment="prod"
   popd
-  kubectl annotate ingress rancher -n cattle-system kubernetes.io/ingress.class=nginx-ingress-nginx
+  # kubectl annotate ingress rancher -n cattle-system kubernetes.io/ingress.class=nginx-ingress-nginx
   echo -e "\e[32m Rancher deployed at following url rancher.${host_address} \e[39m "
   else
     echo "skipping rancher"
