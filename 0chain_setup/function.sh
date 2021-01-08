@@ -726,7 +726,6 @@ deploy_rancher() {
   if [[ $rancher == true ]]; then
   echo -e "\e[93m Setting up rancher \e[39m" && append_logs "Setting up rancher dashboard"
   export CLUSTER=$cluster
-  pushd rancher
   helm repo add rancher-stable https://releases.rancher.com/server-charts/stable  
   kubectl create namespace cattle-system
   
@@ -736,7 +735,6 @@ deploy_rancher() {
     --set ingress.tls.source="letsEncrypt" \
     --set letsEncrypt.email="consult@squareops.com" \
     --set letsEncrypt.environment="prod"
-  popd
   # kubectl annotate ingress rancher -n cattle-system kubernetes.io/ingress.class=nginx-ingress-nginx
   echo -e "\e[32m Rancher deployed at following url rancher.${host_address} \e[39m "
   else
@@ -759,7 +757,8 @@ deploy_grafana() {
   kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_thanosrulers.yaml
 
   kubectl create namespace monitoring
-  helm upgrade --install kube-prometheus-stack prometheus-com/kube-prometheus-stack --version 9.4.4 --set prometheusOperator.createCustomResource=false --namespace monitoring
+  sed "s/cluster_name/$cluster/g" ./custom-dash-cm.yaml | kubectl apply -f -
+  helm upgrade --install kube-prometheus-stack prometheus-com/kube-prometheus-stack --version 9.4.4 --set prometheusOperator.createCustomResource=false --set grafana.defaultDashboardsEnabled=false --namespace monitoring
 
   echo username - admin 
   echo password - prom-operator

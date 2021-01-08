@@ -358,3 +358,32 @@ if [[ $deploy_main == true ]]; then
   fi
 fi
 # echo  "--------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+
+
+if [[ $grafana == true ]]; then
+  resolvedIP=$(nslookup "$grafana_domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+  [[ -z "$resolvedIP" ]] && echo "$grafana_domain" lookup failure || echo "$grafana_domain" resolved to "$resolvedIP"
+
+    if [[ $resolvedIP ]]; then
+      curl -H 'Content-Type: application/json' -X PUT "https://admin:prom-operator@$grafana_domain/api/org/preferences" -d'{ "theme": "",  "homeDashboardId":1,  "timezone":"utc"}'
+    fi
+    
+    if [[ -z $grafana_domain || -z $resolvedIP ]]; then
+      curl -H 'Content-Type: application/json' -X PUT "https://admin:prom-operator@$host_ip:30001/api/org/preferences" -d'{ "theme": "",  "homeDashboardId":1,  "timezone":"utc"}'
+    fi
+fi
+
+if [[ $elk == true ]]; then 
+  resolvedIP=$(nslookup "$kibana_domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
+  [[ -z "$resolvedIP" ]] && echo "$kibana_domain" lookup failure || echo "$kibana_domain" resolved to "$resolvedIP"
+
+    if [[ $resolvedIP ]]; then
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$kibana_domain/api/saved_objects/index-pattern/filebeat -d '{ "attributes": { "title": "filebeat-*", "timeFieldName": "@timestamp" }}'
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$kibana_domain/api/kibana/settings -d '{ "changes": {"defaultRoute": "/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!f,value:10000),time:(from:now-10m,to:now))&_a=(columns:!(host.name,message),filters:!(),index:filebeat,interval:auto,query:(language:kuery),sort:!())"}}'
+    fi
+    
+    if [[ -z $kibana_domain || -z $resolvedIP ]]; then
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$host_ip:30002/api/saved_objects/index-pattern/filebeat -d '{ "attributes": { "title": "filebeat-*", "timeFieldName": "@timestamp" }}'
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$host_ip:30002/api/kibana/settings -d '{ "changes": {"defaultRoute": "/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!f,value:10000),time:(from:now-10m,to:now))&_a=(columns:!(host.name,message),filters:!(),index:filebeat,interval:auto,query:(language:kuery),sort:!())"}}'
+    fi
+fi
