@@ -369,7 +369,7 @@ if [[ $grafana == true ]]; then
     fi
     
     if [[ -z $grafana_domain || -z $resolvedIP ]]; then
-      curl -H 'Content-Type: application/json' -X PUT "https://admin:prom-operator@$host_ip:30001/api/org/preferences" -d'{ "theme": "",  "homeDashboardId":1,  "timezone":"utc"}'
+      curl -H 'Content-Type: application/json' -X PUT "http://admin:prom-operator@$host_ip:30001/api/org/preferences" -d'{ "theme": "",  "homeDashboardId":1,  "timezone":"utc"}'
     fi
 fi
 
@@ -383,7 +383,7 @@ if [[ $elk == true ]]; then
     fi
     
     if [[ -z $kibana_domain || -z $resolvedIP ]]; then
-      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$host_ip:30002/api/saved_objects/index-pattern/filebeat -d '{ "attributes": { "title": "filebeat-*", "timeFieldName": "@timestamp" }}'
-      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  https://elastic:${PASSWORD}@$host_ip:30002/api/kibana/settings -d '{ "changes": {"defaultRoute": "/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!f,value:10000),time:(from:now-10m,to:now))&_a=(columns:!(host.name,message),filters:!(),index:filebeat,interval:auto,query:(language:kuery),sort:!())"}}'
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  http://elastic:${PASSWORD}@$host_ip:30002/api/saved_objects/index-pattern/filebeat -d '{ "attributes": { "title": "filebeat-*", "timeFieldName": "@timestamp" }}'
+      curl -sX POST -H 'kbn-xsrf: 1' -H 'content-type: application/json'  http://elastic:${PASSWORD}@$host_ip:30002/api/kibana/settings -d '{ "changes": {"defaultRoute": "/app/kibana#/discover?_g=(filters:!(),refreshInterval:(pause:!f,value:10000),time:(from:now-10m,to:now))&_a=(columns:!(host.name,message),filters:!(),index:filebeat,interval:auto,query:(language:kuery),sort:!())"}}'
     fi
 fi
