@@ -1,29 +1,40 @@
-  apiVersion: extensions/v1beta1
+apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: 0chain-ingress
-  namespace: monitoring
+  name: expose-chain-comp
+  namespace:  test
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # kubernetes.io/ingress.allow-http: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
-    rules:
-    - host: one.devnet-0chain.net
-      http:
-        paths:
-        - backend:
-            serviceName: explorer
-            servicePort: 80
-          path: /
-        - backend:
-            serviceName: recorder
-            servicePort: 80
-          path: /recorder(/|$)(.*)
-        - backend:
-            serviceName: worker
-            servicePort: 80
-          path: /dns(/|$)(.*)
-        - backend:
-            serviceName: zproxy
-            servicePort: 31082
-          path: /proxy(/|$)(.*)
+  tls:
+  - hosts:
+    - test.devnet-0chain.net
+    secretName: test-com-kubernetes-tls-01
+  rules:
+  - host: test.devnet-0chain.net
+    http:
+      paths:
+
+      - path: /sharder01/(|$)(.*)
+        backend:
+          serviceName: sharder-01
+          servicePort: 31101
+
+      - path: /miner01/(|$)(.*)
+        backend:
+          serviceName: miner-01
+          servicePort: 31201
+
+      - path: /blobber01/(|$)(.*)
+        backend:
+          serviceName: blobber-01
+          servicePort: 31301
+
+      - path: /validator01/(|$)(.*)
+        backend:
+          serviceName: validator-01
+          servicePort: 31401
