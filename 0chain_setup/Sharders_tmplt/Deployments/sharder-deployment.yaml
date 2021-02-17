@@ -31,7 +31,7 @@ spec:
               topologyKey: "kubernetes.io/hostname"
       containers:
         - name: sharder-${n}
-          image: ${REGISTRY_IMAGE}/sharder:${TAG}
+          image: 0chainkube/sharder:${TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 312${n}
