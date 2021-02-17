@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
         - name: gen-keys
-          image: 0chainkube/zchain_genkeys:standalone_v2
+          image: 0chaintest/zchain_genkeys:0miner
           imagePullPolicy: Always
           env:
             - name: MINER
