@@ -423,7 +423,7 @@ patch_services() {
 
     echo $svc_name"-------"$svc_port
     cat <<EOF >>./patch_service.sh
-kubectl -n test patch svc $svc_name --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":$svc_port}]'
+kubectl -n $cluster patch svc $svc_name --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":$svc_port}]'
 EOF
   done
 }
