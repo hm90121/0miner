@@ -21,7 +21,7 @@ export PATH=$PATH:/snap/bin
 
 - Jq
  ```bash
-sudo apt update && sudo apt install jq
+sudo apt update && sudo apt install jq -y
 ```
 - Kubectl
  ```bash
@@ -34,7 +34,7 @@ kubectl version --client
 
 - python3 & pip3  
 ```bash
-sudo apt update && sudo apt install python3-pip
+sudo apt update && sudo apt install python3-pip -y
 pip3 install -U PyYAML
 ```
 
