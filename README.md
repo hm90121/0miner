@@ -14,14 +14,14 @@ sudo snap start microk8s
 ```
 #### Check the status while Kubernetes starts
 ```bash
-microk8s status --wait-ready
+sudo microk8s status --wait-ready
 export PATH=$PATH:/snap/bin
 ```
 ### Setup required tools
 
 - Jq
  ```bash
-sudo apt update && sudo apt install jq
+sudo apt update && sudo apt install jq -y
 ```
 - Kubectl
  ```bash
@@ -34,7 +34,7 @@ kubectl version --client
 
 - python3 & pip3  
 ```bash
-sudo apt update && sudo apt install python3-pip
+sudo apt update && sudo apt install python3-pip -y
 pip3 install -U PyYAML
 ```
 
