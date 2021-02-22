@@ -13,9 +13,9 @@ data:
     #    2 GB - 2147483648
     #    3 GB - 3221225472
     #  100 GB - 107374182400
-    capacity: 10737418240 # 10 GB bytes total blobber capacity
+    capacity: 107374182400 # 100 GB bytes total blobber capacity
     read_price: 0.01     # token / GB for reading
-    write_price: 0.10    # token / GB / time_unit for writing
+    write_price: 0.01    # token / GB / time_unit for writing
     # the time_unit configured in Storage SC and can be given using
     #
     #     ./zbox sc-config

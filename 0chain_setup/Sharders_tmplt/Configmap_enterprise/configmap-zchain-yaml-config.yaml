@@ -24,7 +24,7 @@ data:
       txn_generation:
         wallets: 50
         max_transactions: 0
-        max_txn_fee: 10000
+        max_txn_fee: 0
         min_txn_fee: 0
         max_txn_value: 10000000000
         min_txn_value: 100
@@ -49,7 +49,6 @@ data:
         max_block_size: 10
         max_byte_size: 1638400
         generators: 3
-        #replicators: 3
         replicators: 0
         generation:
           timeout: 15
@@ -98,12 +97,16 @@ data:
           report_status_mins: 1 #minutes
           batch_size: 50
         proximity_scan:
-          enabled: true
+          enabled: false
           settle_secs: 30
           window: 0 #number of blocks
           repeat_interval_mins: 1 #minutes
           report_status_mins: 1 #minutes
           batch_size: 50
+      lfb_ticket:
+        rebroadcast_timeout: '15s'  #
+        ahead: 5                    #
+        fb_fetching_lifetime: '10s' #
 
     network:
       magic_block_file: config/magicBlock.json
@@ -115,9 +118,9 @@ data:
         large_message: 3000 # milliseconds
       large_message_th_size: 5120 # anything greater than this size in bytes
       user_handlers:
-        rate_limit: 10 # 10 per second
+        rate_limit: 100000000 # 100 per second
       n2n_handlers:
-        rate_limit: 1000 # 1000 per second
+        rate_limit: 100000000 # 10000 per second
 
     # delegate wallet is wallet that used to configure node in Miner SC; if its
     # empty, then node ID used
@@ -134,16 +137,16 @@ data:
     max_stake: 100.0  # tokens
 
     minio:
-      enabled: true # Enable or disable minio backup, Do not enable with deep scan ON
-      worker_frequency: 3600 # In Seconds, The frequency at which the worker should look for files, Ex: 3600 means it will run every 3600 seconds
-      num_workers: 5 # Number of workers to run in parallel, Just to make execution faster we can have mutiple workers running simultaneously
-      use_ssl: false # Use SSL for connection or not
-      old_block_round_range: 700000 # How old the block should be to be considered for moving to cloud
+      enabled: false # Enable or disable minio backup, Do not enable with deep scan ON
+      worker_frequency: 300 # In Seconds, The frequency at which the worker should look for files, Ex: 3600 means it will run every 3600 seconds
+      num_workers: 40 # Number of workers to run in parallel, Just to make execution faster we can have mutiple workers running simultaneously
+      use_ssl: true # Use SSL for connection or not
+      old_block_round_range: 200 # How old the block should be to be considered for moving to cloud
       delete_local_copy: true # Delete local copy of block once it's moved to cloud
 
     cassandra:
       connection:
-        delay: 3 # in seconds
+        delay: 10 # in seconds
         retries: 10
 
     # integration tests related configurations
