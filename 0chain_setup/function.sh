@@ -603,22 +603,22 @@ user_input_deployment() {
   fi
 }
 
-get_host() {
-  local address_type=$1
-  local blobber_count=$2
-  if [ $address_type == "external" ]; then
-    host_address="${host_name}.${domain_name}"
-  elif [ $address_type == "internal" ]; then
-    host_address="ambassador.ambassador"
-  elif [[ $address_type == "custom" ]]; then
-    if [[ $b -gt $blobber_limit ]]; then
-      host_address="blobbers.$host_address"
-    fi
-  else
-    host_address="${host_name}.${domain_name}"
-  fi
-  echo $host_address
-}
+# get_host() {
+#   local address_type=$1
+#   local blobber_count=$2
+#   if [ $address_type == "external" ]; then
+#     host_address="${host_name}.${domain_name}"
+#   elif [ $address_type == "internal" ]; then
+#     host_address="ambassador.ambassador"
+#   elif [[ $address_type == "custom" ]]; then
+#     if [[ $b -gt $blobber_limit ]]; then
+#       host_address="blobbers.$host_address"
+#     fi
+#   else
+#     host_address="${host_name}.${domain_name}"
+#   fi
+#   echo $host_address
+# }
 
 create_dns_mapping() {
   pushd Aws
