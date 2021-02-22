@@ -647,7 +647,7 @@ expose_deployment_lb() {
 
 configure_standalone_dp() {
   local config_dir="Configmap_enterprise"
-  local block_worker_url="http://${network_url}/dns"
+  local block_worker_url="https://${network_url}/dns"
   local port=""
   read_price=${read_price:-"0.1"}
   write_price=${write_price:-"0.1"}
