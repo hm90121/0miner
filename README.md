@@ -62,7 +62,7 @@ bash utility/local_k8s.sh
 pip3 install -r utility/requirements.txt
 ```
 Provide the required inputs after that and you are all done for the microk8s part. 
-Note: If running on EC2, provide public ip range when asked for enabling metallb e.g. 3.134.116.182-3.134.116.182
+Note: If running on EC2, provide public ip range when asked for enabling metallb e.g. 3.134.116.182-3.134.116.182 if public ip of your instance is 3.134.116.182
 
 Note: Microk8s setup does not include dns pointing. You have to make dns entries in etc/hosts file or Route53 to access it.
 
@@ -93,9 +93,9 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "monitoring": {
     "elk": "true", // always true 
     "elk_address": "", // leave empty if you want to access elk on nodeport
-    "rancher": "false",
+    "rancher": "true",
     "rancher_address": "rancher.test.devnet-0chain.net",
-    "grafana": "false",
+    "grafana": "true",
     "grafana_address": "" // leave empty if you want to access grafana on nodeport
   },
   "on_premise": {
@@ -105,7 +105,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network": "three", // network you want to join
+    "network_url": "three", // url of the network you want to join
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",

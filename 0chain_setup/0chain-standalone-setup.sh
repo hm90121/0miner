@@ -185,9 +185,8 @@ fi
 host_address=$host_name
 echo $host_address
 echo $host_ip
-block_worker_url="https://${network}.devnet-0chain.net/dns"
-
-echo $network
+block_worker_url="http://${network_url}/dns"
+echo $network_url
 
 # if [[ $m == 1 ]]; then
 #   config_dir="Sharders_tmplt/Configmap_enterprise"
@@ -312,7 +311,11 @@ pushd Keygen
 popd
 # blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
 
+<<<<<<< HEAD
 block_worker_url="https://${network}.devnet-0chain.net/dns"
+=======
+block_worker_url="http://${network_url}/dns"
+>>>>>>> master
 mkdir -p on-prem/wallet && rm -f on-prem/wallet/*
 
 ./Keygen/standalone/keys_file --host_url ${host_address} --port " " --keys_file on-prem/wallet/owner_keys.txt

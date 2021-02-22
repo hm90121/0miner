@@ -322,6 +322,17 @@ data:
           ALTER TABLE reference_objects
               ADD COLUMN attributes JSON DEFAULT '{}'::jsonb;
       COMMIT;
+  13-add-collaborators-table.sql: |-
+      \connect blobber_meta;
+
+
+      CREATE TABLE collaborators (
+          ref_id BIGSERIAL NOT NULL,
+          client_id VARCHAR(64) NOT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+
+      GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO blobber_user;
 kind: ConfigMap
 metadata:
   creationTimestamp: null

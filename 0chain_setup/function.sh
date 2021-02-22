@@ -595,7 +595,7 @@ user_input_deployment() {
     standalone=true
     public_key=$(jq -r .standalone.public_key $json_source)
     private_key=$(jq -r .standalone.private_key $json_source)
-    network=$(jq -r .standalone.network $json_source)
+    network_url=$(jq -r .standalone.network_url $json_source)
     blobber_delegate_ID=$(jq -r .standalone.blobber_delegate_ID $json_source)
     read_price=$(jq -r .standalone.read_price $json_source)
     write_price=$(jq -r .standalone.write_price $json_source)
@@ -678,7 +678,7 @@ expose_deployment_lb() {
 
 configure_standalone_dp() {
   local config_dir="Configmap_enterprise"
-  local block_worker_url="http://${network}.devnet-0chain.net/dns"
+  local block_worker_url="http://${network_url}/dns"
   local port=""
   read_price=${read_price:-"0.1"}
   write_price=${write_price:-"0.1"}
