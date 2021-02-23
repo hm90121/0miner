@@ -185,7 +185,7 @@ fi
 host_address=$host_name
 echo $host_address
 echo $host_ip
-block_worker_url="http://${network_url}/dns"
+block_worker_url="https://${network_url}/dns"
 echo $network_url
 
 # if [[ $m == 1 ]]; then
