@@ -9,4 +9,4 @@ stringData:
 kind: Secret
 metadata:
   creationTimestamp: null
-  name: minio-config
+  name: minio-config-sharder

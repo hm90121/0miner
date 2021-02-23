@@ -86,7 +86,7 @@ spec:
             - mountPath: /blobber/keysconfig
               name: blob-config-pvc
             - mountPath: /blobber/keysconfig/minio_config.txt
-              name: minio-config
+              name: minio-config-blobber
               subPath: minio_config.txt
             - mountPath: /blobber/sql
               name: postgres-sql-pvc
@@ -96,9 +96,9 @@ spec:
       imagePullSecrets:
         - name: regcred
       volumes:
-        - name: minio-config
+        - name: minio-config-blobber
           secret:
-            secretName: minio-config
+            secretName: minio-config-blobber
             defaultMode: 0755
         - name: blob-config-pvc
           persistentVolumeClaim:
