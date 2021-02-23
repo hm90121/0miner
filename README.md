@@ -77,8 +77,10 @@ SHARDER_BUCKET_NAME=""
 BLOBBER_BUCKET_NAME=""
 ```
 *Enable minio in 0chain_setup/Sharders_tmplt/Configmap/configmap-zchain-yaml-config.yaml*
+
 *Enable minio in 0chain_setup/Blobbers_tmplt/Configmap/configmap-blobber-config.template*
 
+#### Edit 0chain_setup/utility/config/on-prem_input_microk8s_standalone.json and provide correct values for host_ip, host_address, network_url, etc.
 
 #### At last execute the setup script using
 ```bash
@@ -119,7 +121,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network_url": "three", // url of the network you want to join
+    "network_url": "three.devnet-0chain.net", // url of the network you want to join
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",
