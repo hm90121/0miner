@@ -145,41 +145,14 @@ create_configmap() {
 
 create_bucket() {
   echo -e "\e[93m =================== Creating cloud storage bucket =================== \e[39m"
-  append_logs "Creating storage bucket or backup"
+  append_logs "Creating storage bucket for backup"
+  access_key_id=$ACCESS_KEY_ID && secret_access_key=$SECRET_ACCESS_KEY && bucket_url=$BUCKET_URL && bucket_region=$BUCKET_REGION && sharder_bucket_name=$SHARDER_BUCKET_NAME && blobber_bucket_name=$BLOBBER_BUCKET_NAME
 
-  pushd Load_balancer/Aws
   local cloud_provider=$1
   local enable_archive=$2
-  retain_object_duration=90
-  # bucket_name="$sainitize_cluster_name"
-  oci_namespace="axtfpvxiff82"
 
-  if [ $cloud_provider == "aws" ]; then
-    bucket_url="s3.amazonaws.com"
-    bucket_region="us-east-2"
-    access_key_id=$AWS_ACCESS_KEY_ID && secret_access_key=$AWS_SECRET_ACCESS_KEY
-    # create_bucket_status=$(aws s3api create-bucket --bucket $bucket_name --region $bucket_region --acl public-read-write --no-object-lock-enabled-for-bucket --create-bucket-configuration LocationConstraint=$bucket_region | jq -r .Location)
-    if [[ ! -z $create_bucket_status || $enable_archive == true ]]; then
-      cluster=${bucket_name} duration=${retain_object_duration} \
-        envsubst <s3_aws_lifecycle_policy.template >s3_aws_lifecycle_policy.json
-      aws s3api put-bucket-lifecycle-configuration \
-        --bucket $bucket_name \
-        --lifecycle-configuration file://s3_aws_lifecycle_policy.json
-    fi
-  elif [ $cloud_provider == "oci" ]; then
-    bucket_region="us-east-1"
-    bucket_url="$oci_namespace.compat.objectstorage.us-phoenix-1.oraclecloud.com"
-    access_key_id=$OCI_ACCESS_KEY_ID && secret_access_key=$OCI_SECRET_ACCESS_KEY
-    # create_bucket_status=$(oci os bucket create -c ${OCI_TENANCY_ID} --name $bucket_name --public-access-type ObjectRead --storage-tier Standard | jq -r .data.id)
-    if [[ ! -z $create_bucket_status || $enable_archive == true ]]; then
-      cluster=${bucket_name} duration=${retain_object_duration} \
-        envsubst <archive_oci_lifecycle_policy.template >archive_oci_lifecycle_policy.json
-      oci os object-lifecycle-policy put -ns $oci_namespace -bn $bucket_name --force --items file://archive_oci_lifecycle_policy.json
-    fi
-  fi
-  popd
   # echo "$bucket_region $bucket_name $bucket_url $access_key_id $secret_access_key"
-  if [[ -z $bucket_region || -z $bucket_name || -z $bucket_url || -z $access_key_id || -z $secret_access_key ]]; then
+  if [[ -z $bucket_region || -z $bucket_url || -z $access_key_id || -z $secret_access_key ]]; then
     bucket_url="play.min.io"
     bucket_name="mytestbucket"
     access_key_id="Q3AM3UQ867SPQQA43P2F"
@@ -187,13 +160,18 @@ create_bucket() {
     bucket_region="us-east-1"
   fi
   if [[ $enable_archive != true ]]; then
-    mkdir -p k8s-yamls && rm -f k8s-yamls/*
-    bucket_url=${bucket_url} bucket_name=${bucket_name} access_key_id=${access_key_id} secret_access_key=${secret_access_key} bucket_region=${bucket_region} \
-      envsubst <Sharders_tmplt/Configmap/configmap-minio.template >k8s-yamls/secret-minio-${cluster}.yaml
-    create_configmap k8s-yamls/secret-minio-${cluster}.yaml minio
-    sleep 5 && rm k8s-yamls/secret-minio-${cluster}.yaml
+    bucket_url=${bucket_url} bucket_name=${sharder_bucket_name} access_key_id=${access_key_id} secret_access_key=${secret_access_key} bucket_region=${bucket_region} \
+      envsubst <Sharders_tmplt/Configmap/configmap-minio.template >k8s-yamls/sharder-secret-minio-${cluster}.yaml
+    create_configmap k8s-yamls/sharder-secret-minio-${cluster}.yaml minio
+    sleep 5 && rm k8s-yamls/sharder-secret-minio-${cluster}.yaml
+
+    bucket_url=${bucket_url} bucket_name=${blobber_bucket_name} access_key_id=${access_key_id} secret_access_key=${secret_access_key} bucket_region=${bucket_region} \
+      envsubst <Blobbers_tmplt/Configmap/configmap-minio.template >k8s-yamls/blobber-secret-minio-${cluster}.yaml
+    create_configmap k8s-yamls/blobber-secret-minio-${cluster}.yaml minio
+    sleep 5 && rm k8s-yamls/blobber-secret-minio-${cluster}.yaml
   fi
 }
+
 
 deploy_rook_ceph() {
   pushd rook-ceph/0chain
@@ -678,7 +656,7 @@ expose_deployment_lb() {
 
 configure_standalone_dp() {
   local config_dir="Configmap_enterprise"
-  local block_worker_url="http://${network_url}/dns"
+  local block_worker_url="https://${network_url}/dns"
   local port=""
   read_price=${read_price:-"0.1"}
   write_price=${write_price:-"0.1"}

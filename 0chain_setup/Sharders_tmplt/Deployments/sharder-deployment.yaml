@@ -64,7 +64,7 @@ spec:
               name: sc-config
               subPath: sc.yaml
             - mountPath: /0chain/config/minio_config.txt
-              name: minio-config
+              name: minio-config-sharder
               subPath: minio_config.txt
             - mountPath: /0chain/config/b0owner_keys.txt
               name: owner-keys-config
@@ -102,9 +102,9 @@ spec:
           configMap:
             name: sc-config
             defaultMode: 0755
-        - name: minio-config
+        - name: minio-config-sharder
           secret:
-            secretName: minio-config
+            secretName: minio-config-sharder
             defaultMode: 0755
         - name: owner-keys-config
           configMap:
