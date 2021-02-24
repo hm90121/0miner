@@ -108,11 +108,11 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "deployment_type": "public", // Use of deployment "PUBLIC" or "PRIVATE"
   "monitoring": {
     "elk": "true", // always true 
-    "elk_address": "", // leave empty if you want to access elk on nodeport
+    "elk_address": "elastic.test.devnet-0chain.net", // leave empty if you want to access elk on nodeport
     "rancher": "true",
     "rancher_address": "rancher.test.devnet-0chain.net",
     "grafana": "true",
-    "grafana_address": "" // leave empty if you want to access grafana on nodeport
+    "grafana_address": "grafana.test.devnet-0chain.net" // leave empty if you want to access grafana on nodeport
   },
   "on_premise": {
     "environment": "microk8s", 
@@ -121,7 +121,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network_url": "three.devnet-0chain.net", // url of the network you want to join
+    "network_url": "two.devnet-0chain.net", // url of the network you want to join
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",
@@ -133,7 +133,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
 
 #### Verify and validate the deployment
 
-To verify and validate the deployment visit `http://<network>.devnet-0chain.net:31101/_diagnostics`
+To verify and validate the deployment visit `https://<network_url>/sharder01/_diagnostics`
 
 #### Reset command:
 ```bash

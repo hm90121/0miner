@@ -30,7 +30,7 @@
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network_url": "three.devnet-0chain.net",
+    "network_url": "two.devnet-0chain.net",
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",
