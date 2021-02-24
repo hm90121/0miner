@@ -80,7 +80,7 @@ BLOBBER_BUCKET_NAME=""
 
 *Enable minio in 0chain_setup/Blobbers_tmplt/Configmap/configmap-blobber-config.template*
 
-#### Edit 0chain_setup/utility/config/on-prem_input_microk8s_standalone.json and provide correct values for host_ip, host_address, network_url, etc.
+#### Edit 0chain_setup/utility/config/on-prem_input_microk8s_standalone.json and provide correct values for host_ip, < your-domain >, network_url, etc.
 
 #### At last execute the setup script using
 ```bash
@@ -97,7 +97,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "blobber_count": "1", // number of blobber you want to deploy 
   "deploy_main": true, 
   "deploy_auxiliary": true,
-  "host_address": "test.devnet-0chain.net", // Host url for your public IP 
+  "host_address": "<your-domain>", // Host url for your public IP 
   "host_ip": "18.217.219.7", // Host ip 
   "kubeconfig_path": "", // path to your kubeconfig, keep it empty to use system configured kubeconfig
   "n2n_delay": "", // Delay between node to slow down block creation
@@ -108,11 +108,11 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "deployment_type": "public", // Use of deployment "PUBLIC" or "PRIVATE"
   "monitoring": {
     "elk": "true", // always true 
-    "elk_address": "elastic.test.devnet-0chain.net", // leave empty if you want to access elk on nodeport
+    "elk_address": "elastic.<your-domain>", // leave empty if you want to access elk on nodeport
     "rancher": "true",
-    "rancher_address": "rancher.test.devnet-0chain.net",
+    "rancher_address": "rancher.<your-domain>",
     "grafana": "true",
-    "grafana_address": "grafana.test.devnet-0chain.net" // leave empty if you want to access grafana on nodeport
+    "grafana_address": "grafana.<your-domain>" // leave empty if you want to access grafana on nodeport
   },
   "on_premise": {
     "environment": "microk8s", 
@@ -135,7 +135,22 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
 
 To verify and validate the deployment visit `https://<network_url>/sharder01/_diagnostics`
 
-#### Reset command:
+#### Check logs and metrices.
+
+When the script is executed, you can check logs and metrices by visiting kibana and grafana urls given as output by the script. Below is an example of how kibana and grafana look after the deployment.
+
+<img src="https://github.com/0chain/0miner/blob/https_changes/images/kibana.png" width="400" />         <img src="https://github.com/0chain/0miner/blob/https_changes/images/grafana.png" width="400" />  
+
+#### Manage Deployment.
+
+To manage pods you can use rancher deployed on rancher.<your-domain> 
+ 
+<img src="https://github.com/0chain/0miner/blob/https_changes/images/rancher.png" width="400" />  
+
+#### Reset
+
+To reset network for fresh deployment use:
+
 ```bash
 bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json --reset true
 ```
