@@ -1,5 +1,6 @@
 
-## Guide to setup the 0miner on kubernetes cluster
+## Guide to setup 0miner as a kubernetes cluster on a single server
+This repo enables you to automate joining a 0Chain network and scale capacity in an automated fashion. You can generate m miners, s sharders, and b blobbers. Typically you will use SSD for sharders and blobber data, and this will grow, you can tier this to S3 servers to scale capacity.  You can use rancher to change config or restart a miner, sharder or blobber. Additionally, you can monitor the resource usage on Grafana, and search logs on Kibana, which are easy interfaces to get an overview of the operation of your server. 
 
 ## Requirements
 
@@ -53,7 +54,7 @@ kubectl get po -A
 
 ## Step 2. Set up the 0chain componets in k8s:
 
-Clone the kubernetes repository and change the directory to 0chain_setup and run the below commands to setup the 0chain components. There are some predefined configs as well in utility/config/ directory make the changes in them if you don't want to create the new json from scratch.
+Clone this repository and change the directory to 0chain_setup and run the commands below to set up 0chain components. There are some default configs in utility/config/ directory. Make appropriate changes if you don't want to create the new json from scratch.
 
 ```bash
 git clone https://github.com/0chain/0miner.git
@@ -61,7 +62,7 @@ cd 0miner/0chain_setup
 bash utility/local_k8s.sh 
 pip3 install -r utility/requirements.txt
 ```
-Provide the required inputs after that and you are all done for the microk8s part. 
+Provide the required inputs and you are all done for the microk8s part. 
 Note: If running on EC2, provide public ip range when asked for enabling metallb e.g. 3.134.116.182-3.134.116.182 if public ip of your instance is 3.134.116.182
 
 Note: Microk8s setup does not include dns pointing. You have to make dns entries in etc/hosts file or Route53 to access it.
@@ -82,7 +83,7 @@ BLOBBER_BUCKET_NAME=""
 
 #### Edit 0chain_setup/utility/config/on-prem_input_microk8s_standalone.json and provide correct values for host_ip, host_address, network_url, etc.
 
-#### At last execute the setup script using
+#### Finally execute the setup script using
 ```bash
 bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json
 ```
@@ -121,7 +122,7 @@ bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network_url": "three.devnet-0chain.net", // url of the network you want to join
+    "network_url": "one.devnet-0chain.net", // url of the network you want to join
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",
