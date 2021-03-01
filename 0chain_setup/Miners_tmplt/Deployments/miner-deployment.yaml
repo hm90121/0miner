@@ -30,7 +30,7 @@ spec:
                       - redis-${n}
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - image: 0chainkube/miner:${TAG}
+        - image: ${REGISTRY_IMAGE}/miner:${TAG}
           imagePullPolicy: Always
           name: miner-${n}
           ports:
