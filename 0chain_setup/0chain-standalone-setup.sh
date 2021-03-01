@@ -185,8 +185,7 @@ fi
 host_address=$host_name
 echo $host_address
 echo $host_ip
-block_worker_url="http://${network_url}/dns"
-
+block_worker_url="https://${network_url}/dns"
 echo $network_url
 
 # if [[ $m == 1 ]]; then
@@ -214,54 +213,28 @@ pushd Load_balancer
       pushd nginx
       mkdir -p k8s-yamls && rm -f k8s-yamls/*
       echo -e "\e[93m =================== Deploying nginx =================== \e[39m" && append_logs "Deploying secondary load balancer for blobber service"
-      cluster=${cluster}
-      cluster=ingress-nginx envsubst <ingress-nginx_custom.template >./k8s-yamls/ingress-nginx_custom.yaml
-      kubectl create -f ./k8s-yamls/ingress-nginx_custom.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+      # cluster=${cluster}
+      # cluster=ingress-nginx envsubst <ingress-nginx_custom.template >./k8s-yamls/ingress-nginx_custom.yaml
+      # kubectl create -f ./k8s-yamls/ingress-nginx_custom.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
       # kubectl create -f ./ingress-nginx.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+      kubectl create -f ingress-nginx.yaml
       kubectl wait --namespace ingress-nginx \
         --for=condition=ready pod \
         --selector=app.kubernetes.io/component=controller \
         --timeout=120s
+      kubectl -n ingress-nginx patch deployment ingress-nginx-controller --patch="$(<nginx-host-networking.yaml)"
+      patch_ngnix_lb 311 $s sharder
+      patch_ngnix_lb 312 $m miner
+      patch_ngnix_lb 313 $b blobber
+      patch_ngnix_lb 314 $b validator
+      cluster=${cluster} host_address=${grafana_domain} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
+      cluster=${cluster} host_address=${kibana_domain} envsubst <kibana-ingress.template >./k8s-yamls/kibana-ingress.yaml
+      kubectl -n ${cluster} create -f k8s-yamls/chain_ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
       popd
     fi
 
 domain=$host_name
-resolvedIP=$(nslookup "$domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)
 
-[[ -z "$resolvedIP" ]] && echo "$domain" lookup failure || echo "$domain" resolved to "$resolvedIP"
-
-  if [[ $resolvedIP ]]; then
-    echo "configuring host mapping"
-    create_dns_mapping ingress-nginx
-    append_logs "Configuring Loadbalancer"
-    pushd nginx
-    patch_ngnix_lb 311 $s sharder
-    patch_ngnix_lb 312 $m miner
-    patch_ngnix_lb 313 $b blobber
-    patch_ngnix_lb 314 $b validator
-    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress.template >./k8s-yamls/nginx-path-ingress.yaml
-    # cluster=${cluster} host_address=${host_address} envsubst <nginx-path-ingress-rec.template >./k8s-yamls/nginx-path-ingress-rec.yaml
-    cluster=${cluster} host_address=${grafana_domain} envsubst <grafana-ingress.template >./k8s-yamls/grafana-ingress.yaml
-    cluster=${cluster} host_address=${kibana_domain} envsubst <kibana-ingress.template >./k8s-yamls/kibana-ingress.yaml
-    # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    # kubectl -n ${cluster} create -f ./k8s-yamls/nginx-path-ingress-rec.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  fi
-
-  if [[ -z $domain || -z $resolvedIP ]]; then
-    echo "configuring port mapping"
-    create_dns_mapping ingress-nginx
-    append_logs "Configuring Loadbalancer"
-    pushd nginx
-    patch_ngnix_lb 311 $s sharder
-    patch_ngnix_lb 312 $m miner
-    patch_ngnix_lb 313 $b blobber
-    kubectl create -f ./k8s-yamls/nginx_cm_tcp.yaml --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    kubectl -n ${cluster} patch svc ingress-nginx-controller --patch "$(cat k8s-yamls/nginx_svc_patch.yaml)" -n ingress-nginx --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  fi
-    # kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission-${cluster} --kubeconfig ${kubeconfig}
-    popd
     popd
 
   kubectl apply --validate=false -f https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.crds.yaml
@@ -303,7 +276,8 @@ pushd Keygen
 popd
 # blobber_delegate_ID=${blobber_delegate_ID} block_worker_url=${block_worker_url} read_price=${read_price} write_price=${write_price} envsubst <Blobbers_tmplt/$config_dir/configmap-blobber-config.template >Blobbers_tmplt/$config_dir/configmap-blobber-config.yaml
 
-block_worker_url="http://${network_url}/dns"
+block_worker_url="https://${network_url}/dns"
+
 mkdir -p on-prem/wallet && rm -f on-prem/wallet/*
 
 ./Keygen/standalone/keys_file --host_url ${host_address} --port " " --keys_file on-prem/wallet/owner_keys.txt
@@ -358,7 +332,13 @@ if [[ $deploy_main == true ]]; then
   fi
 fi
 # echo  "--------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+patch_services 311 $s sharder
+patch_services 312 $m miner
+patch_services 313 $b blobber
+patch_services 314 $b validator
 
+bash patch_service.sh
+rm patch_service.sh
 
 if [[ $grafana == true ]]; then
   resolvedIP=$(nslookup "$grafana_domain" | awk -F':' '/^Address: / { matched = 1 } matched { print $2}' | xargs)

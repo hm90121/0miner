@@ -352,30 +352,61 @@ unit_deploy() {
 }
 
 patch_ngnix_lb() {
-  echo -e "\e[93m =================== Patching NGINX for TCP & URL Mappings =================== \e[39m" 
-  if [[ ! -f k8s-yamls/nginx_cm_tcp.yaml || ! -f k8s-yamls/nginx_svc_patch.yaml ]]; then
-    cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
-    envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
+  echo -e "\e[93m =================== Patching NGINX for TCP & URL Mappings =================== \e[39m"
+
+  if [[ ! -f k8s-yamls/chain_ingress.yaml ]]; then
+    # cluster=${cluster} envsubst <nginx_cm_tcp.template >k8s-yamls/nginx_cm_tcp.yaml
+    # envsubst <nginx_svc_patch.template >k8s-yamls/nginx_svc_patch.yaml
+    host_address=${host_address} cluster=${cluster} envsubst <chain_ingress.template >k8s-yamls/chain_ingress.yaml
   fi
   for n in $(seq $SP $(($2 + $EP))); do
     n=$(validate_port $n)
     local svc_name=$3-$n
     local svc_port=$1$n
-    echo -e "$exposed_port_list Exposing service $svc_name on $host_address:$svc_port"
+    # echo -e "$exposed_port_list Exposing service $svc_name on $host_address:$svc_port"
 
-    cat <<EOF >>./k8s-yamls/nginx_cm_tcp.yaml
-  $svc_port: "${cluster}/$svc_name:$svc_port"
-EOF
+#     cat <<EOF >>./k8s-yamls/nginx_cm_tcp.yaml
+#   $svc_port: "${cluster}/$svc_name:$svc_port"
+# EOF
 
-    cat <<EOF >>./k8s-yamls/nginx_svc_patch.yaml
-  - name: "$svc_port"
-    nodePort: $svc_port
-    port: $svc_port
-    protocol: TCP
+#     cat <<EOF >>./k8s-yamls/nginx_svc_patch.yaml
+#   - name: "$svc_port"
+#     nodePort: $svc_port
+#     port: $svc_port
+#     protocol: TCP
+# EOF
+
+#     cat <<EOF >>./k8s-yamls/ingress.yaml
+#   $svc_port: "${cluster}/$svc_name:$svc_port"
+# EOF
+
+    cat <<EOF >>./k8s-yamls/chain_ingress.yaml
+      - path: /$3$n/(|$)(.*)
+        backend:
+          serviceName: $3-$n
+          servicePort: $1$n
 EOF
   done
 
 }
+
+patch_services() {
+
+  echo -e "\e[93m =================== Patching Services =================== \e[39m"
+
+  for n in $(seq $SP $(($2 + $EP))); do
+    n=$(validate_port $n)
+    local svc_name=$3-$n
+    local svc_port=$1$n
+
+    echo $svc_name"-------"$svc_port
+    cat <<EOF >>./patch_service.sh
+kubectl -n $cluster patch svc $svc_name --type='json' -p '[{"op":"replace","path":"/spec/type","value":"NodePort"},{"op":"replace","path":"/spec/ports/0/nodePort","value":$svc_port}]'
+EOF
+  done
+}
+
+
 
 patch_ambassador() {
   if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
@@ -550,22 +581,22 @@ user_input_deployment() {
   fi
 }
 
-get_host() {
-  local address_type=$1
-  local blobber_count=$2
-  if [ $address_type == "external" ]; then
-    host_address="${host_name}.${domain_name}"
-  elif [ $address_type == "internal" ]; then
-    host_address="ambassador.ambassador"
-  elif [[ $address_type == "custom" ]]; then
-    if [[ $b -gt $blobber_limit ]]; then
-      host_address="blobbers.$host_address"
-    fi
-  else
-    host_address="${host_name}.${domain_name}"
-  fi
-  echo $host_address
-}
+# get_host() {
+#   local address_type=$1
+#   local blobber_count=$2
+#   if [ $address_type == "external" ]; then
+#     host_address="${host_name}.${domain_name}"
+#   elif [ $address_type == "internal" ]; then
+#     host_address="ambassador.ambassador"
+#   elif [[ $address_type == "custom" ]]; then
+#     if [[ $b -gt $blobber_limit ]]; then
+#       host_address="blobbers.$host_address"
+#     fi
+#   else
+#     host_address="${host_name}.${domain_name}"
+#   fi
+#   echo $host_address
+# }
 
 create_dns_mapping() {
   pushd Aws
@@ -704,15 +735,16 @@ deploy_rancher() {
   if [[ $rancher == true ]]; then
   echo -e "\e[93m Setting up rancher \e[39m" && append_logs "Setting up rancher dashboard"
   export CLUSTER=$cluster
-  helm repo add rancher-stable https://releases.rancher.com/server-charts/stable  
+  helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
   kubectl create namespace cattle-system
   
-  helm upgrade --install rancher rancher-stable/rancher --version 2.4.8 \
+  helm upgrade --install rancher rancher-latest/rancher \
     --namespace cattle-system \
     --set hostname=${rancher_domain} \
     --set ingress.tls.source="letsEncrypt" \
-    --set letsEncrypt.email="consult@squareops.com" \
-    --set letsEncrypt.environment="prod"
+    --set letsEncrypt.email="anish@squareops.xyz" \
+    --set letsEncrypt.environment="production"
+
   # kubectl annotate ingress rancher -n cattle-system kubernetes.io/ingress.class=nginx-ingress-nginx
   echo -e "\e[32m Rancher deployed at following url ${rancher_domain} \e[39m "
   else

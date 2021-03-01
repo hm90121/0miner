@@ -1,7 +1,0 @@
-- hosts: master
-  become: yes
-  tasks:
-    - name: disable master node taint
-      become: yes
-      become_user: ubuntu
-      shell: kubectl taint nodes $(hostname) node-role.kubernetes.io/master:NoSchedule-

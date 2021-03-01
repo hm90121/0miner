@@ -6,8 +6,8 @@
   "blobber_count": "1",
   "deploy_main": true,
   "deploy_auxiliary": true,
-  "host_address": "test.devnet-0chain.net",
-  "host_ip": "18.217.219.7",
+  "host_address": "<your-domain>",
+  "host_ip": "<host-ip>",
   "kubeconfig_path": "",
   "n2n_delay": "",
   "fs_type": "microk8s-hostpath",
@@ -19,18 +19,18 @@
     "elk": "true",
     "elk_address": "",
     "rancher": "false",
-    "rancher_address": "rancher.test.devnet-0chain.net",
+    "rancher_address": "rancher.<your-domain>",
     "grafana": "false",
     "grafana_address": ""
   },
   "on_premise": {
     "environment": "microk8s",
-    "host_ip": "18.217.219.7"
+    "host_ip": "<host-ip>"
   },
   "standalone": {
     "public_key": "",
     "private_key": "",
-    "network_url": "three.devnet-0chain.net",
+    "network_url": "two.devnet-0chain.net",
     "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
     "read_price": "",
     "write_price": "",

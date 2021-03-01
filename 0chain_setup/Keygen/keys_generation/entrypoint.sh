@@ -29,8 +29,9 @@ key_gen_miner() {
     on=$n
     n=$(validate_port $n)
     port=${3}${n}
+    path=${5}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --path ${path} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -38,7 +39,8 @@ key_gen_miner() {
       cat <<EOF >>/config/nodes.yaml
   n2n_ip: ${n2n_ip}               
   public_ip: $2                   
-  port: ${3}${n}             
+  port: ${3}${n}
+  path: ${5}${n}             
   description: localhost.$4${n} 
   set_index: $((${on} - 1))
 EOF
@@ -55,8 +57,9 @@ key_gen() {
   for n in $(seq 1 $(($1 + 0))); do
     n=$(validate_port $n)
     port=${3}${n}
+    path=${5}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --path ${path} --keys_file /ms-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -64,7 +67,8 @@ key_gen() {
       cat <<EOF >>/config/nodes.yaml
   n2n_ip: ${n2n_ip}              
   public_ip: $2                   
-  port: ${3}${n}             
+  port: ${3}${n}
+  path: ${5}${n}             
   description: localhost.$4${n} 
 EOF
     else
@@ -80,8 +84,9 @@ key_gen_blobber() {
   for n in $(seq 1 $(($1 + 0))); do
     n=$(validate_port $n)
     port=${3}${n}
+    path=${5}${n}
     echo -e "Creating keys for $5-${n}.. \n"
-    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --keys_file /blob-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
+    /0chain/go/0chain.net/core/keys_file --host_url ${host_address} --n2n_ip ${host_ip} --port ${port} --path ${path} --keys_file /blob-keys/b0$4node${n}_keys.txt >>/config/nodes.yaml
     status=$?
     local n2n_ip="$5-${n}"
     [[ $DTYPE == "PUBLIC" ]] && n2n_ip=$2
@@ -89,7 +94,8 @@ key_gen_blobber() {
       cat <<EOF >>/config/nodes.yaml
   n2n_ip: ${n2n_ip}              
   public_ip: $2                   
-  port: ${3}${n}             
+  port: ${3}${n}
+  path: ${5}${n}             
   description: localhost.$4${n} 
 EOF
     else

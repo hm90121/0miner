@@ -10,47 +10,41 @@ import (
 )
 
 func main() {
-	clientSigScheme := flag.String("signature_scheme", "", "ed25519 or bls0chain")
-	keysFileName := flag.String("keys_file_name", "keys.txt", "keys_file_name")
-	path := flag.String("keys_file_path", "keys.txt", "keys_file_path")
-	generateKeys := flag.Bool("generate_keys", false, "generate_keys")
-	printPrivate := flag.Bool("print_private", false, "print_private")
+	clientSigScheme := flag.String("signature_scheme", "bls0chain", "ed25519 or bls0chain")
+	publicKey := flag.String("public_key", "", "public_key")
+	privateKey := flag.String("private_key", "", "private_key")
+	hostURL := flag.String("host_url", "", "host_url")
+	n2nIP := flag.String("n2n_ip", "", "n2n_ip")
+	port := flag.String("port", "", "port")
+	path := flag.String("path", "", "path")
+	keysFile := flag.String("keys_file", "keys.txt", "keys_file")
 	flag.Parse()
-	keysFile := fmt.Sprintf("%s/%s", *path, *keysFileName)
-	var sigScheme = encryption.GetSignatureScheme(*clientSigScheme)
-	if *generateKeys {
-		err := sigScheme.GenerateKeys()
+	if len(*hostURL) == 0 ||
+		len(*port) == 0 {
+		panic("Invalid input params")
+	}
+	if len(*publicKey) == 0 || len(*privateKey) == 0 {
+		sigScheme := zcncrypto.NewSignatureScheme(*clientSigScheme)
+		wallet, err := sigScheme.GenerateKeys()
 		if err != nil {
 			panic(err)
 		}
-		if len(keysFile) > 0 {
-			writer, err := os.OpenFile(keysFile, os.O_RDWR|os.O_CREATE, 0644)
-			if err != nil {
-				panic(err)
-			}
-			defer writer.Close()
-			sigScheme.WriteKeys(writer)
-		} else {
-			sigScheme.WriteKeys(os.Stdout)
-		}
+		privateKey = &wallet.Keys[0].PrivateKey
+		publicKey = &wallet.Keys[0].PublicKey
 	}
-	if len(keysFile) == 0 {
-		return
-	}
-	reader, err := os.Open(keysFile)
+	file, err := os.Create(*keysFile)
 	if err != nil {
 		panic(err)
 	}
-	_, publicKey, privateKey := encryption.ReadKeys(reader)
-	pubKeyBytes, err := hex.DecodeString(publicKey)
-	if err != nil {
-		panic(err)
+	defer file.Close()
+	file.WriteString(*publicKey + "\n")
+	file.WriteString(*privateKey + "\n")
+	file.WriteString(*hostURL + "\n")
+	if len(*n2nIP) != 0 {
+		file.WriteString(*n2nIP + "\n")
 	}
-	clientID := encryption.Hash(pubKeyBytes)
-	reader.Close()
-	fmt.Printf("- id: %v\n", clientID)
-	fmt.Printf("  public_key: %v\n", publicKey)
-	if *printPrivate {
-		fmt.Printf("  private_key: %v\n", privateKey)
+	file.WriteString(*port)
+	if len(*path) != 0 {
+		file.WriteString(*path)
 	}
 }
