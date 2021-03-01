@@ -1,5 +1,6 @@
 
 ## Guide to setup 0miner as a kubernetes cluster on a single server
+
 This repo enables you to automate joining a 0Chain network and scale capacity in an automated fashion. You can generate m miners, s sharders, and b blobbers. Typically you will use SSD for sharder and blobber data, and since this will grow, you can tier them to S3 servers to scale capacity.  You can use rancher to change config or restart a miner, sharder or blobber. Additionally, you can monitor the resource usage on Grafana, and search logs on Kibana, which are easy interfaces to get an overview of the operation of your server.
 
 ## Requirements
