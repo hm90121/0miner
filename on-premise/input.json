@@ -1,7 +1,0 @@
-{
-  "masters": {
-    "ansible_host": "38.32.112.214",
-    "ansible_user": "ubuntu"
-  },
-  "workers": []
-}
