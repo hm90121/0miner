@@ -757,7 +757,7 @@ deploy_grafana() {
   echo -e "\e[93m Setting up prometheus and grafana \e[39m" && append_logs "Setting up elk stack for logging and metric data"
   export CLUSTER=$cluster
   helm repo add prometheus-com https://prometheus-community.github.io/helm-charts
-  helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+  helm repo add stable https://charts.helm.sh/stable
   helm repo update
   kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_alertmanagers.yaml
   kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/release-0.38/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml
