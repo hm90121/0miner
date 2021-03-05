@@ -79,7 +79,7 @@ data:
 
     minio:
       # Enable or disable minio backup service
-      start: true
+      start: false
       # The frequency at which the worker should look for files, Ex: 3600 means it will run every 3600 seconds
       worker_frequency: 3600 # In Seconds
       # Use SSL for connection or not
