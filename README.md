@@ -64,9 +64,10 @@ bash utility/local_k8s.sh
 pip3 install -r utility/requirements.txt
 ```
 Provide the required inputs and you are all done for the microk8s part. 
-Note: If running on EC2, provide public ip range when asked for enabling metallb e.g. 3.134.116.182-3.134.116.182 if public ip of your instance is 3.134.116.182
 
-Note: Microk8s setup does not include dns pointing. You have to make dns entries in etc/hosts file or Route53 to access it.
+Note: If running on instance / vm / bare metal, provide public ip range when asked for enabling metallb e.g. 3.134.116.182-3.134.116.182 if public ip of your instance is 3.134.116.182
+
+Note: Microk8s setup does not include dns pointing. You have to make dns entries for your domain pointing to your ip to access the components.
 
 #### (Optional) Create a .env file in 0chain_setup directory if you want to enable minio tiering for sharders and blobbers. 
 *Enter values inside quotes accordingly*
