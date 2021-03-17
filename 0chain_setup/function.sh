@@ -202,12 +202,6 @@ cluster_reset() {
   cluster=$1
   kubeconfig=$2
 
-  if [[ $standalone != true ]]; then
-    pushd Load_balancer
-    kubectl delete -f ./Ambassador/ambassador-aes.yaml --kubeconfig ${kubeconfig}
-    kubectl delete -f ./Ambassador/ambassador-aes-crds.yaml --kubeconfig ${kubeconfig}
-  fi
-
   local ns_nginx=$(kubectl get ns --kubeconfig ${kubeconfig} | grep "ingress-nginx")
   if [[ ! -z $ns_nginx ]]; then
     pushd Load_balancer
@@ -220,13 +214,10 @@ cluster_reset() {
   kubectl delete all --all -n monitoring
   kubectl delete all --all -n cattle-system
   kubectl delete all --all -n elastic-system
-  kubectl delete ns monitoring
-  kubectl delete ns cattle-system
-  kubectl delete ns elastic-system
+  kubectl delete pvc --all -n elastic-system
   kubectl delete all --all -n ${cluster}
-  kubectl delete ns ${cluster} --kubeconfig ${kubeconfig}
+  kubectl delete pvc --all -n ${cluster}
   kubectl delete all --all -n cert-manager
-  kubectl delete ns cert-manager
 }
 
 validate_port() {

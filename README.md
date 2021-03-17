@@ -151,9 +151,12 @@ To manage pods you can use rancher deployed on rancher.<your-domain>
 
 #### Reset
 
-To reset network for fresh deployment use:
+To reset network for fresh deployment reinstall microk8s using the commands below:
 
 ```bash
+cd 0miner/0chain_setup
+sudo su
 bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json --reset true
+bash reset.sh
 ```
-
+Now continue with Step 2. to setup 0chain components.
