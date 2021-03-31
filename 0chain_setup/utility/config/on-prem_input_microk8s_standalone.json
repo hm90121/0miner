@@ -11,7 +11,7 @@
   "kubeconfig_path": "",
   "n2n_delay": "",
   "fs_type": "microk8s-hostpath",
-  "repo_type": "0chaintest",
+  "repo_type": "0chaindev",
   "image_tag": "latest",
   "record_type": "A",
   "deployment_type": "public",
