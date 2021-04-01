@@ -700,7 +700,7 @@ deploy_elk_stack() {
   echo ELASTICSEARCH PASSWORD $PASSWORD
 
   curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/filebeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
-  curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/metricbeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
+  # curl --silent https://raw.githubusercontent.com/elastic/beats/7.8/deploy/kubernetes/metricbeat-kubernetes.yaml | awk '$2 == "name:" { tag = ($3 == "ELASTICSEARCH_HOST") } tag && $1 == "value:"{$1 = "          " $1; $2 = "elastic-cluster-es-http"} 1' | sed "s/changeme/$PASSWORD/g" | sed "s/kube-system/elastic-system/g" | sed "s/7.8.1/7.8.0/g" | kubectl apply -f -
   PASSWORD=$PASSWORD CLUSTER=$cluster envsubst <filebeat-sidecar-configmap.template >filebeat-sidecar-configmap.yaml
   kubectl apply -f filebeat-sidecar-configmap.yaml
   popd
