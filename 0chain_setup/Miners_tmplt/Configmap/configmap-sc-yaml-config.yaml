@@ -16,10 +16,10 @@ data:
 
       minersc:
         # miners
-        max_n: 8 # 100
+        max_n: 100 # 100
         min_n: 2 # 3
         # sharders
-        max_s: 3 # 30
+        max_s: 25 # 30
         min_s: 1 # 1
         # max delegates allowed by SC
         max_delegates: 200 #
