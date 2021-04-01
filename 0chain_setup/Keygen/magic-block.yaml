@@ -11,7 +11,7 @@ spec:
       containers:
         - name: magic-block
           imagePullPolicy: Always
-          image: 0chaintest/magic-block:latest
+          image: 0chaindev/magic-block:latest
           args:
             - bash
             - -c

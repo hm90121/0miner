@@ -696,6 +696,11 @@ deploy_elk_stack() {
   kubectl apply -f kibana.yaml
   sleep 35
   PASSWORD=$(kubectl get secret elastic-cluster-es-elastic-user -n elastic-system -o go-template='{{.data.elastic | base64decode}}')
+  until [[ ! -z "$PASSWORD" ]]
+  do
+    sleep 5
+    PASSWORD=$(kubectl get secret elastic-cluster-es-elastic-user -n elastic-system --kubeconfig ${kubeconfig} -o go-template='{{.data.elastic | base64decode}}')
+  done
   echo ELASTICSEARCH USER=elastic
   echo ELASTICSEARCH PASSWORD $PASSWORD
 
