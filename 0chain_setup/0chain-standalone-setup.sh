@@ -306,6 +306,8 @@ if [[ $deploy_main == true ]]; then
   if [[ $m =~ ^[0-9]+$ && $m -gt 0 && $m -le 99 ]]; then
     if [[ $is_deploy_miner != false ]]; then
       echo -e "\e[93m =================== Creating the Miner components =================== \e[39m" && append_logs "Creating Miners"
+      kubectl apply -f Miners_tmplt/configmap-sc-yaml-config.yaml -n ${cluster} --kubeconfig $kubeconfig
+      kubectl apply -f Miners_tmplt/configmap-zchain-yaml-config.yaml -n ${cluster} --kubeconfig $kubeconfig
       k8s_deply Miners_tmplt $m 4
       for n in $(seq $m); do
         n=$(validate_port $n)

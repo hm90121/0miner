@@ -173,30 +173,30 @@ create_bucket() {
 }
 
 
-deploy_rook_ceph() {
-  pushd rook-ceph/0chain
-  if [[ "$count" -gt "3" ]]; then
-    osd_count="$count"
-  else
-    osd_count=3
-  fi
-  count=${osd_count} envsubst <prime-cluster.tmplt >prime-cluster.yaml
-  storage_class=$(kubectl get storageclasses.storage.k8s.io -n rook-ceph --kubeconfig ${kubeconfig} | grep "csi-cephfs")
-  if [[ -z "$storage_class" && $cloud_provider != "on-premise" ]]; then
-    echo -e "\e[93m =================== Creating the Storage class Rook-ceph =================== \n \e[39m"
-    append_logs "Creating kubernetes storage class ${storage_class}"
-    for file in $(ls *.yaml -p | grep -v /); do
-      # ls ${file}
-      kubectl create -f ${file} --kubeconfig $kubeconfig $KUBE_EXTRA_ARGS
-      sleep 5
-    done
-    echo -e "\e[32m Creating storage class csi-cephfs, this may take few minutes \e[39m"
-    progress_bar 60
-  else
-    echo -e "\e[32m Storage class csi-cephfs already exist \e[39m"
-  fi
-  popd
-}
+# deploy_rook_ceph() {
+#   pushd rook-ceph/0chain
+#   if [[ "$count" -gt "3" ]]; then
+#     osd_count="$count"
+#   else
+#     osd_count=3
+#   fi
+#   count=${osd_count} envsubst <prime-cluster.tmplt >prime-cluster.yaml
+#   storage_class=$(kubectl get storageclasses.storage.k8s.io -n rook-ceph --kubeconfig ${kubeconfig} | grep "csi-cephfs")
+#   if [[ -z "$storage_class" && $cloud_provider != "on-premise" ]]; then
+#     echo -e "\e[93m =================== Creating the Storage class Rook-ceph =================== \n \e[39m"
+#     append_logs "Creating kubernetes storage class ${storage_class}"
+#     for file in $(ls *.yaml -p | grep -v /); do
+#       # ls ${file}
+#       kubectl create -f ${file} --kubeconfig $kubeconfig $KUBE_EXTRA_ARGS
+#       sleep 5
+#     done
+#     echo -e "\e[32m Creating storage class csi-cephfs, this may take few minutes \e[39m"
+#     progress_bar 60
+#   else
+#     echo -e "\e[32m Storage class csi-cephfs already exist \e[39m"
+#   fi
+#   popd
+# }
 
 cluster_reset() {
   cluster=$1
@@ -399,81 +399,81 @@ EOF
 
 
 
-patch_ambassador() {
-  if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
-    pushd metallb
-    echo -e "\e[32m Patching metalb for external IP ${host_ip}\e[39m"
-    host_ip=${host_ip} envsubst <metallb_config.template >metallb_config.yaml
-    kubectl apply -f metallb_config.yaml --namespace metallb-system --kubeconfig $kubeconfig
-    # kubectl -n ambassador patch svc ambassador --patch "$(cat k8s-yamls/ambassador_svc_eip_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-    popd
-  fi
+# patch_ambassador() {
+#   if [[ $cloud_provider == "on-premise" && ! -z $host_ip ]]; then
+#     pushd metallb
+#     echo -e "\e[32m Patching metalb for external IP ${host_ip}\e[39m"
+#     host_ip=${host_ip} envsubst <metallb_config.template >metallb_config.yaml
+#     kubectl apply -f metallb_config.yaml --namespace metallb-system --kubeconfig $kubeconfig
+#     # kubectl -n ambassador patch svc ambassador --patch "$(cat k8s-yamls/ambassador_svc_eip_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#     popd
+#   fi
 
-  pushd Ambassador
-  mkdir -p k8s-yamls && rm -f k8s-yamls/*
+#   pushd Ambassador
+#   mkdir -p k8s-yamls && rm -f k8s-yamls/*
 
-  echo -e "\e[93m =================== Patching ambassador for TCP & URL Mappings =================== \e[39m"
+#   echo -e "\e[93m =================== Patching ambassador for TCP & URL Mappings =================== \e[39m"
 
-  ambassador_svc_http_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "http" }}{{print .nodePort}}{{end}}{{end}}')
-  ambassador_svc_https_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "https" }}{{print .nodePort}}{{end}}{{end}}')
-  ambassador_svc_http_port=${ambassador_svc_http_port} ambassador_svc_https_port=${ambassador_svc_https_port} envsubst <ambassador_svc_patch.template >k8s-yamls/ambassador_svc_patch.yaml
+#   ambassador_svc_http_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "http" }}{{print .nodePort}}{{end}}{{end}}')
+#   ambassador_svc_https_port=$(kubectl get -n ambassador service ambassador --kubeconfig ${kubeconfig} -o 'go-template={{range .spec.ports}}{{if eq .name "https" }}{{print .nodePort}}{{end}}{{end}}')
+#   ambassador_svc_http_port=${ambassador_svc_http_port} ambassador_svc_https_port=${ambassador_svc_https_port} envsubst <ambassador_svc_patch.template >k8s-yamls/ambassador_svc_patch.yaml
 
-  if [[ $s =~ ^[0-9]+$ && $s -gt 0 && $s -le 99 ]]; then
-    expose_port 311 $s Sharder # 311**
-    for n in $(seq $SP $(($s + $EP))); do
-      n=$(validate_port $n)
-      n=${n} envsubst <sharder-ambassador.yaml >k8s-yamls/sharder-ambassador-${n}.yaml
-      n=${n} kubectl create -f k8s-yamls/sharder-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
-    done
-  fi
-  if [[ $m =~ ^[0-9]+$ && $m -gt 0 && $m -le 99 ]]; then
-    expose_port 312 $m Miners # 312**
-    for n in $(seq $SP $(($m + $EP))); do
-      n=$(validate_port $n)
-      n=${n} envsubst <miner-ambassador.yaml >k8s-yamls/miner-ambassador-${n}.yaml
-      n=${n} kubectl create -f k8s-yamls/miner-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
-    done
-  fi
-  if [[ $b =~ ^[0-9]+$ && $b -gt 0 && $b -le 99 ]]; then
-    if [ ! $b -gt $blobber_limit ]; then
-      expose_port 313 $b Blobber # 313**
-      for n in $(seq $SP $(($b + $EP))); do
-        n=$(validate_port $n)
-        n=${n} envsubst <blobber-ambassador.yaml >k8s-yamls/blobber-ambassador-${n}.yaml
-        n=${n} kubectl create -f k8s-yamls/blobber-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
-      done
-    else
-      popd
-      create_dns_mapping ingress-nginx
-      pushd nginx
-      patch_ngnix_lb 313 $b Blobber
-      popd
-      pushd Ambassador
-    fi
-  fi
+#   if [[ $s =~ ^[0-9]+$ && $s -gt 0 && $s -le 99 ]]; then
+#     expose_port 311 $s Sharder # 311**
+#     for n in $(seq $SP $(($s + $EP))); do
+#       n=$(validate_port $n)
+#       n=${n} envsubst <sharder-ambassador.yaml >k8s-yamls/sharder-ambassador-${n}.yaml
+#       n=${n} kubectl create -f k8s-yamls/sharder-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+#     done
+#   fi
+#   if [[ $m =~ ^[0-9]+$ && $m -gt 0 && $m -le 99 ]]; then
+#     expose_port 312 $m Miners # 312**
+#     for n in $(seq $SP $(($m + $EP))); do
+#       n=$(validate_port $n)
+#       n=${n} envsubst <miner-ambassador.yaml >k8s-yamls/miner-ambassador-${n}.yaml
+#       n=${n} kubectl create -f k8s-yamls/miner-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+#     done
+#   fi
+#   if [[ $b =~ ^[0-9]+$ && $b -gt 0 && $b -le 99 ]]; then
+#     if [ ! $b -gt $blobber_limit ]; then
+#       expose_port 313 $b Blobber # 313**
+#       for n in $(seq $SP $(($b + $EP))); do
+#         n=$(validate_port $n)
+#         n=${n} envsubst <blobber-ambassador.yaml >k8s-yamls/blobber-ambassador-${n}.yaml
+#         n=${n} kubectl create -f k8s-yamls/blobber-ambassador-${n}.yaml --kubeconfig $kubeconfig --namespace $cluster $KUBE_EXTRA_ARGS
+#       done
+#     else
+#       popd
+#       create_dns_mapping ingress-nginx
+#       pushd nginx
+#       patch_ngnix_lb 313 $b Blobber
+#       popd
+#       pushd Ambassador
+#     fi
+#   fi
 
-  sleep 5
-  # Expose Tcp Mappings
-  kubectl -n ambassador patch svc ambassador --patch "$(cat k8s-yamls/ambassador_svc_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  exposed_port_list="$exposed_port_list Exposing explorer on $host_address:80${NEWLINE}"
-  echo -e "\e[32m $exposed_port_list"
+#   sleep 5
+#   # Expose Tcp Mappings
+#   kubectl -n ambassador patch svc ambassador --patch "$(cat k8s-yamls/ambassador_svc_patch.yaml)" --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   exposed_port_list="$exposed_port_list Exposing explorer on $host_address:80${NEWLINE}"
+#   echo -e "\e[32m $exposed_port_list"
 
-  sleep 5
-  # Disable https and ssl
-  host_address=${host_address} envsubst <ambassador_hosts.yaml >k8s-yamls/ambassador_hosts.yaml
-  kubectl create -f k8s-yamls/ambassador_hosts.yaml --kubeconfig $kubeconfig
+#   sleep 5
+#   # Disable https and ssl
+#   host_address=${host_address} envsubst <ambassador_hosts.yaml >k8s-yamls/ambassador_hosts.yaml
+#   kubectl create -f k8s-yamls/ambassador_hosts.yaml --kubeconfig $kubeconfig
 
-  sleep 5
-  # Expose Url Mappings
-  # kubectl create -f explorer-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  # kubectl create -f recorder-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  # kubectl create -f worker-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  # kubectl create -f 0proxy-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
-  kubectl create -f ambassador_path_mapping.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   sleep 5
+#   # Expose Url Mappings
+#   # kubectl create -f explorer-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   # kubectl create -f recorder-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   # kubectl create -f worker-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   # kubectl create -f 0proxy-ambassador.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
+#   kubectl create -f ambassador_path_mapping.yaml --namespace $cluster --kubeconfig ${kubeconfig} $KUBE_EXTRA_ARGS
 
-  echo -e "\e[32m Completed Patching Load balancer \e[39m"
-  popd
-}
+#   echo -e "\e[32m Completed Patching Load balancer \e[39m"
+#   popd
+# }
 
 bounce_pods() {
   local namespace=$2

@@ -1,8 +1,0 @@
-apiVersion: getambassador.io/v2
-kind:  TCPMapping
-metadata:
-  ambassador_id: ambassador-two
-  name:  miner-${n}
-spec:
-  port: 312${n}
-  service: miner-${n}:312${n}
