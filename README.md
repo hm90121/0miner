@@ -83,56 +83,76 @@ BLOBBER_BUCKET_NAME=""
 
 *Enable minio in 0chain_setup/Blobbers_tmplt/Configmap/configmap-blobber-config.template*
 
-#### Edit 0chain_setup/utility/config/on-prem_input_microk8s_standalone.json and provide correct values for host_ip, < your-domain >, network_url, etc.
+## Configuring 0Chain components
+
+The configuration for 0Chain components is done statically via the `on-prem_input_microk8s_standalone.json`  file located in  0chain_setup/utility/config folder
+
+1. Navigate to the 0chain_setup/utility/config folder
+
+   ```
+   cd utility/config
+   ```
+
+2. Edit the config file using nano editor
+
+        nano prem_input_microk8s_standalone.json
+
+​      Here is a sample prem_input_microk8s_standalone.json file .
+
+
+    {
+      "cloud_provider": "on-premise",
+      "cluster_name": "test",      // Namespace in which all your resources will be created
+      "sharder_count": "1",        // number of sharder you want to deploy 
+      "miner_count": "1",         // number of miner you want to deploy 
+      "blobber_count": "1",      // number of blobber you want to deploy 
+      "deploy_main": true, 
+      "deploy_auxiliary": true,
+      "host_address": "<your-domain>", // Host url for your public IP 
+      "host_ip": "18.217.219.7",       // Host ip 
+      "kubeconfig_path": "",      // path to your kubeconfig, keep it empty to use system configured kubeconfig
+      "n2n_delay": "",           // Delay between node to slow down block creation
+      "fs_type": "microk8s-hostpath", // valid file system type (On-premise) [standard/ microk8s-hostpath/ openebs-cstore-sc]
+      "repo_type": "0chaintest", // Repository to use 0chainkube or 0chaintest
+      "image_tag": "latest",     // image version to be used 
+      "record_type": "A",        // Dns record type supported by cloud provider (AWS) [CNAME] || (OCI) [A]
+      "deployment_type": "public",   // Use of deployment "PUBLIC" or "PRIVATE"
+      "monitoring": {
+        "elk": "true", // always true 
+        "elk_address": "elastic.<your-domain>", // leave empty if you want to access elk on nodeport
+        "rancher": "true",
+        "rancher_address": "rancher.<your-domain>",
+        "grafana": "true",
+        "grafana_address": "grafana.<your-domain>" // leave empty if you want to access grafana on nodeport
+      },
+      "on_premise": {
+        "environment": "microk8s", 
+        "host_ip": "18.217.219.7" // Host ip
+      },
+      "standalone": {
+        "public_key": "",
+        "private_key": "",
+        "network_url": "one.devnet-0chain.net", // url of the network you want to join
+        "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
+        "read_price": "",
+        "write_price": "",
+        "capacity": ""
+      }
+    }
+
+
+3.Necessary Configuration Changes 
+
+- The `elk_address`,`rancher_address`,`grafana_adresss` has to be updated with registered domain name
+- `host_ip`field has to be updated with Virtual Machine public IPv4 address.
+- `host_address` field has to be updated with registered domain name. 
+
 
 #### Finally execute the setup script using
 ```bash
 bash 0chain-standalone-setup.sh --input-file utility/config/on-prem_input_microk8s_standalone.json
 ```
-#### Sample input file
-```
 
-{
-  "cloud_provider": "on-premise",
-  "cluster_name": "test", // Namespace in which all your resources will be created
-  "sharder_count": "1", // number of sharder you want to deploy 
-  "miner_count": "1", // number of miner you want to deploy 
-  "blobber_count": "1", // number of blobber you want to deploy 
-  "deploy_main": true, 
-  "deploy_auxiliary": true,
-  "host_address": "<your-domain>", // Host url for your public IP 
-  "host_ip": "18.217.219.7", // Host ip 
-  "kubeconfig_path": "", // path to your kubeconfig, keep it empty to use system configured kubeconfig
-  "n2n_delay": "", // Delay between node to slow down block creation
-  "fs_type": "microk8s-hostpath", // valid file system type (On-premise) [standard/ microk8s-hostpath/ openebs-cstore-sc]
-  "repo_type": "0chaintest", // Repository to use 0chainkube or 0chaintest
-  "image_tag": "latest", // image version to be used 
-  "record_type": "A", // Dns record type supported by cloud provider (AWS) [CNAME] || (OCI) [A]
-  "deployment_type": "public", // Use of deployment "PUBLIC" or "PRIVATE"
-  "monitoring": {
-    "elk": "true", // always true 
-    "elk_address": "elastic.<your-domain>", // leave empty if you want to access elk on nodeport
-    "rancher": "true",
-    "rancher_address": "rancher.<your-domain>",
-    "grafana": "true",
-    "grafana_address": "grafana.<your-domain>" // leave empty if you want to access grafana on nodeport
-  },
-  "on_premise": {
-    "environment": "microk8s", 
-    "host_ip": "18.217.219.7" // Host ip
-  },
-  "standalone": {
-    "public_key": "",
-    "private_key": "",
-    "network_url": "one.devnet-0chain.net", // url of the network you want to join
-    "blobber_delegate_ID": "20bd2e8feece9243c98d311f06c354f81a41b3e1df815f009817975a087e4894",
-    "read_price": "",
-    "write_price": "",
-    "capacity": ""
-  }
-}
-
-```
 
 #### Verify and validate the deployment
 
