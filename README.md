@@ -95,9 +95,9 @@ The configuration for 0Chain components is done statically via the `on-prem_inpu
 
 2. Edit the config file using nano editor
 
-        nano prem_input_microk8s_standalone.json
+        nano on-prem_input_microk8s_standalone.json
 
-​      Here is a sample prem_input_microk8s_standalone.json file .
+​      Here is a sample on-prem_input_microk8s_standalone.json file .
 
 
     {
